@@ -34,6 +34,13 @@ git checkout -b "分支名" #如 git checkout -b "chassis"
 
 # 代码修改完成后提交
 
+强烈建议你在每次提交前都pull一下拉取最新代码
+``` shell
+git pull
+```
+
+提交代码
+
 ```shell
 git add .
 git commit -m "这里是你的修改信息"

@@ -29,3 +29,4 @@ JLinkLog.txt
 #else
 .vscode
 .clangd
+compile_commands.json

@@ -28,3 +28,4 @@ JLinkLog.txt
 
 #else
 .vscode
+.clangd

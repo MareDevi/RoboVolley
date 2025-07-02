@@ -20,6 +20,11 @@ scoop install git
 ```shell
 git clone https://github.com/MareDevi/RoboVolley.git
 ```
+如果你的网络不太好
+
+```shell
+git clone https://ghfast.top/https://github.com/MareDevi/RoboVolley.git
+```
 
 # 创建分支(Optional)
 

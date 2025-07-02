@@ -14,16 +14,25 @@ Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
 ```shell
 scoop install git
 ```
+有关git的操作可以参考[这里](https://www.runoob.com/git/git-tutorial.html)
 
 # 克隆代码
 
 ```shell
 git clone https://github.com/MareDevi/RoboVolley.git
 ```
-如果你的网络不太好
+如果你的网络不太好：
+注意：使用该镜像时你需要一个gitee账号，请注册后进行克隆。（进行克隆操作时可能会让你填写账号密码）
 
 ```shell
-git clone https://ghfast.top/https://github.com/MareDevi/RoboVolley.git
+git clone https://gitee.com/maredevi/RoboVolley.git
+```
+
+# 配置git身份
+
+```shell
+git config --global user.name '你的用户名' 
+git config --global user.email '你的邮箱'
 ```
 
 # 创建分支(Optional)

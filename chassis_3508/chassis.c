@@ -183,13 +183,12 @@ double chassis_motor_1_pid() // 后侧电机 (Motor 1)
 	// 底盘航向角闭环，将遥控器输入从地面坐标系转换到车体坐标系
 	double sin_yaw = sin(get_INS_angle_point()[0]);
 	double cos_yaw = cos(get_INS_angle_point()[0]);
-	double vx_set = cos_yaw * vx + sin_yaw * vy;   // <-- 修正坐标转换
-	double vy_set = -sin_yaw * vx + cos_yaw * vy;  // <-- 修正坐标转换
+	double vx_set = cos_yaw * vx + sin_yaw * vy;
+	double vy_set = -sin_yaw * vx + cos_yaw * vy;
 	vx = vx_set;
 	vy = vy_set;
 
-	// 逆运动学解算 (v1 = -vx + vc)
-	double target_val = -vx + vc; // <-- 修正运动学公式
+	double target_val = -vx + vc;
 	double current_val = motor_chassis[0].speed_rpm;
 
 	PID1.his_error = PID1.cur_error;
@@ -219,13 +218,12 @@ double chassis_motor_2_pid() // 左前电机 (Motor 2)
 	// 底盘航向角闭环
 	double sin_yaw = sin(get_INS_angle_point()[0]);
 	double cos_yaw = cos(get_INS_angle_point()[0]);
-	double vx_set = cos_yaw * vx + sin_yaw * vy;   // <-- 修正坐标转换
-	double vy_set = -sin_yaw * vx + cos_yaw * vy;  // <-- 修正坐标转换
+	double vx_set = cos_yaw * vx + sin_yaw * vy;
+	double vy_set = -sin_yaw * vx + cos_yaw * vy;
 	vx = vx_set;
 	vy = vy_set;
 
-	// 逆运动学解算 (v2 = 0.5*vx - 0.866*vy + vc)
-	double target_val = 0.5 * vx - 0.866025f * vy + vc; // <-- 修正运动学公式
+	double target_val = 0.5 * vx - 0.866025f * vy + vc;
 	double current_val = motor_chassis[1].speed_rpm;
 
 	PID2.his_error = PID2.cur_error;
@@ -254,13 +252,12 @@ double chassis_motor_3_pid() // 右前电机 (Motor 3)
 	// 底盘航向角闭环
 	double sin_yaw = sin(get_INS_angle_point()[0]);
 	double cos_yaw = cos(get_INS_angle_point()[0]);
-	double vx_set = cos_yaw * vx + sin_yaw * vy;   // <-- 修正坐标转换
-	double vy_set = -sin_yaw * vx + cos_yaw * vy;  // <-- 修正坐标转换
+	double vx_set = cos_yaw * vx + sin_yaw * vy;
+	double vy_set = -sin_yaw * vx + cos_yaw * vy;
 	vx = vx_set;
 	vy = vy_set;
 
-	// 逆运动学解算 (v3 = 0.5*vx + 0.866*vy + vc)
-	double target_val = 0.5 * vx + 0.866025f * vy + vc; // <-- 修正运动学公式
+	double target_val = 0.5 * vx + 0.866025f * vy + vc;
 	double current_val = motor_chassis[2].speed_rpm;
 
 	PID3.his_error = PID3.cur_error;

@@ -186,7 +186,7 @@ void Buff_ReCf(void const * argument)
 		if(DBUS_decode_val.key == 0 && DBUS_decode_val.mod == 1)
 		{
 			DBUS_decode_val.mod = 0;
-			//¹Øµç»ú
+			//ï¿½Øµï¿½ï¿½
 			val_clear();
 			DBUS_decode_val.over = 0;//
 			DBUS_decode_val.pitch = 0;//
@@ -198,7 +198,7 @@ void Buff_ReCf(void const * argument)
 		else if(DBUS_decode_val.key == 1 && DBUS_decode_val.mod == 0)
 		{
 			DBUS_decode_val.mod = 1;
-			//¿ªµç»ú
+			//ï¿½ï¿½ï¿½ï¿½ï¿½
 			can_filter_init();
 			RobStrite_Motor_Init(&motor4, 0x04);//
 			RobStrite_Motor_Init(&motor1, 0x01);

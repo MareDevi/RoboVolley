@@ -46,18 +46,19 @@ void can_filter_init(void)
 void chassis_can_cmd(int16_t motor1, int16_t motor2, int16_t motor3)
 {
 	CAN_TxHeaderTypeDef chasis_tx_message;
-	uint8_t chassis_txdata[6] = {0};
+	uint8_t chassis_txdata[8] = {0}; // <-- 修正: 将数组大小改为8以匹配DLC
 	uint32_t send_mail_box;
 	chasis_tx_message.StdId = CAN_CHASSIS_ALL_ID;
 	chasis_tx_message.IDE = CAN_ID_STD;
 	chasis_tx_message.RTR = CAN_RTR_DATA;
-	chasis_tx_message.DLC = 0x08;
+	chasis_tx_message.DLC = 0x08; // 数据长度为8字节
 	chassis_txdata[0] = motor1 >> 8;
 	chassis_txdata[1] = motor1;
 	chassis_txdata[2] = motor2 >> 8;
 	chassis_txdata[3] = motor2;
 	chassis_txdata[4] = motor3 >> 8;
 	chassis_txdata[5] = motor3;
+	// chassis_txdata[6] 和 chassis_txdata[7] 保持为0，用于第四个电机（未使用）
 
 	HAL_CAN_AddTxMessage(&hcan1, &chasis_tx_message, chassis_txdata, &send_mail_box);
 }
@@ -65,14 +66,12 @@ void chassis_can_cmd(int16_t motor1, int16_t motor2, int16_t motor3)
 // 接收电机信息
 void get_motor_measure(motor_measure_t *ptr, uint8_t data[])
 {
-	for (int i = 0; i < 2; i++)
-	{
-		(ptr)->last_ecd = (ptr)->ecd;
-		(ptr)->ecd = (uint16_t)((data)[0] << 8 | (data)[1]);
-		(ptr)->speed_rpm = (uint16_t)((data)[2] << 8 | (data)[3]);
-		(ptr)->given_current = (uint16_t)((data)[4] << 8 | (data)[5]);
-		(ptr)->temperate = (data)[6];
-	}
+	// 移除不必要的循环
+	(ptr)->last_ecd = (ptr)->ecd;
+	(ptr)->ecd = (uint16_t)((data)[0] << 8 | (data)[1]);
+	(ptr)->speed_rpm = (uint16_t)((data)[2] << 8 | (data)[3]);
+	(ptr)->given_current = (uint16_t)((data)[4] << 8 | (data)[5]);
+	(ptr)->temperate = (data)[6];
 }
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
@@ -174,20 +173,22 @@ void pid_init()
 }
 
 // 控制pid电机控制程序
-double chassis_motor_1_pid() // 左侧电机
+double chassis_motor_1_pid() // 后侧电机 (Motor 1)
 {
 	double vx = DBUS_decode_val.rocker[2] * KV;
 	double vy = DBUS_decode_val.rocker[3] * KV;
 	double vc = DBUS_decode_val.rocker[0] * KV;
 
+	// 底盘航向角闭环，将遥控器输入从地面坐标系转换到车体坐标系
 	double sin_yaw = sin(get_INS_angle_point()[0]);
 	double cos_yaw = cos(get_INS_angle_point()[0]);
-	double vx_set = cos_yaw * vx - sin_yaw * vy;
-	double vy_set = sin_yaw * vx + cos_yaw * vy;
+	double vx_set = cos_yaw * vx + sin_yaw * vy;   // <-- 修正坐标转换
+	double vy_set = -sin_yaw * vx + cos_yaw * vy;  // <-- 修正坐标转换
 	vx = vx_set;
 	vy = vy_set;
 
-	double target_val = -1.2 * vx + vc;
+	// 逆运动学解算 (v1 = -vx + vc)
+	double target_val = -vx + vc; // <-- 修正运动学公式
 	double current_val = motor_chassis[0].speed_rpm;
 
 	PID1.his_error = PID1.cur_error;
@@ -208,20 +209,22 @@ double chassis_motor_1_pid() // 左侧电机
 	return PID1.out;
 }
 
-double chassis_motor_2_pid() // 后侧电机
+double chassis_motor_2_pid() // 左前电机 (Motor 2)
 {
 	double vx = DBUS_decode_val.rocker[2] * KV;
 	double vy = DBUS_decode_val.rocker[3] * KV;
 	double vc = DBUS_decode_val.rocker[0] * KV;
 
+	// 底盘航向角闭环
 	double sin_yaw = sin(get_INS_angle_point()[0]);
 	double cos_yaw = cos(get_INS_angle_point()[0]);
-	double vx_set = cos_yaw * vx - sin_yaw * vy;
-	double vy_set = sin_yaw * vx + cos_yaw * vy;
+	double vx_set = cos_yaw * vx + sin_yaw * vy;   // <-- 修正坐标转换
+	double vy_set = -sin_yaw * vx + cos_yaw * vy;  // <-- 修正坐标转换
 	vx = vx_set;
 	vy = vy_set;
 
-	double target_val = vx / 2.0 + vc + vy;
+	// 逆运动学解算 (v2 = 0.5*vx - 0.866*vy + vc)
+	double target_val = 0.5 * vx - 0.866025f * vy + vc; // <-- 修正运动学公式
 	double current_val = motor_chassis[1].speed_rpm;
 
 	PID2.his_error = PID2.cur_error;
@@ -241,20 +244,22 @@ double chassis_motor_2_pid() // 后侧电机
 	return PID2.out;
 }
 
-double chassis_motor_3_pid() // 右侧电机
+double chassis_motor_3_pid() // 右前电机 (Motor 3)
 {
 	double vx = DBUS_decode_val.rocker[2] * KV;
 	double vy = DBUS_decode_val.rocker[3] * KV;
 	double vc = DBUS_decode_val.rocker[0] * KV;
 
+	// 底盘航向角闭环
 	double sin_yaw = sin(get_INS_angle_point()[0]);
 	double cos_yaw = cos(get_INS_angle_point()[0]);
-	double vx_set = cos_yaw * vx - sin_yaw * vy;
-	double vy_set = sin_yaw * vx + cos_yaw * vy;
+	double vx_set = cos_yaw * vx + sin_yaw * vy;   // <-- 修正坐标转换
+	double vy_set = -sin_yaw * vx + cos_yaw * vy;  // <-- 修正坐标转换
 	vx = vx_set;
 	vy = vy_set;
 
-	double target_val = vx / 2.0 + vc - vy;
+	// 逆运动学解算 (v3 = 0.5*vx + 0.866*vy + vc)
+	double target_val = 0.5 * vx + 0.866025f * vy + vc; // <-- 修正运动学公式
 	double current_val = motor_chassis[2].speed_rpm;
 
 	PID3.his_error = PID3.cur_error;

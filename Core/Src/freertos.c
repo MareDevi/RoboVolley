@@ -53,6 +53,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+osThreadId imuTaskHandle;
 
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
@@ -60,7 +61,6 @@ osThreadId RcontrolHandle;
 osThreadId gimbalTaskHandle;
 osThreadId platformHandle;
 osThreadId delayTaskHandle;
-osThreadId imuTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -69,7 +69,6 @@ osThreadId imuTaskHandle;
 
 void StartDefaultTask(void const * argument);
 void Buff_ReCf(void const * argument);
-//void chassis(void const * argument);
 void gimbal(void const * argument);
 void Platform(void const * argument);
 void delay_for_platform(void const * argument);

@@ -53,4 +53,7 @@ double chassis_motor_1_pid(void);
 double chassis_motor_2_pid(void);
 double chassis_motor_3_pid(void);
 
+// 清除数值
+void val_clear(void);
+
 #endif //

@@ -8,15 +8,15 @@
 #define VAL_OFFSET 1024
 #define DBUS_UART  huatr3
 /*
-rocker[0]:╣велвСв╙ё╛срв╙ оРсрв╙н╙уЩ╥╫оР
-rocker[1]:тфл╗иоиЩ╩Руъоб╫╣ оРион╙уЩ╥╫оР
-rocker[2]:╣велвСрфсррфё╛оРсрйгуЩ╥╫оР
-rocker[3]:╣велг╟рф╨Срфё╛оРг╟йгуЩ╥╫оР
-╥╤н╖н╙-660 ╣╫ +660
+rocker[0]:О©╫О©╫О©╫О©╫О©╫О©╫в╙О©╫О©╫О©╫О©╫в╙ О©╫О©╫О©╫О©╫в╙н╙О©╫О©╫О©╫О©╫О©╫О©╫
+rocker[1]:О©╫О©╫л╗О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫б╫О©╫ О©╫О©╫О©╫О©╫н╙О©╫О©╫О©╫О©╫О©╫О©╫
+rocker[2]:О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫фёО©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫
+rocker[3]:О©╫О©╫О©╫О©╫г╟О©╫ф╨О©╫О©╫фёО©╫О©╫О©╫г╟О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫
+О©╫О©╫н╖н╙-660 О©╫О©╫ +660
 */
 typedef struct
 {
-	int rocker[4];//р║╦к
+	int rocker[4];//р║О©╫О©╫
 	short sw[2];
 	int roll;
 	int key;
@@ -29,7 +29,7 @@ typedef struct
 extern DECODE_VAL DBUS_decode_val;
 extern uint8_t DBUS_buff[MAX_LEN];
 
-void decode_buff(uint8_t *DBUS_buff, DECODE_VAL *DBUS_decode_val);//╫БбК
+void decode_buff(uint8_t *DBUS_buff, DECODE_VAL *DBUS_decode_val);//О©╫О©╫О©╫О©╫
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size);//DMA
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);//IT
 

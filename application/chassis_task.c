@@ -4,7 +4,7 @@
 #include "hchassis.h"
 
 // 底盘控制任务
-void chassis_task(void *argument)
+void chassis_task(void const *argument)
 {
     osDelay(1000);
 

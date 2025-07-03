@@ -48,7 +48,7 @@
             <NotGenerated>0</NotGenerated>
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
-          <OutputDirectory>test111\</OutputDirectory>
+          <OutputDirectory>.\RoboVolley\</OutputDirectory>
           <OutputName>RoboVolley</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>

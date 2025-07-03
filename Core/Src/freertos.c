@@ -32,6 +32,7 @@
 #include "stdio.h"
 #include "rob2.h"
 #include "chassis_task.h"
+#include "INS_task.h"
 //#include "hval_out.h"
 /* USER CODE END Includes */
 
@@ -56,10 +57,10 @@
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 osThreadId RcontrolHandle;
-//osThreadId chassis3508Handle; // 旧任务句柄已移除
 osThreadId gimbalTaskHandle;
 osThreadId platformHandle;
 osThreadId delayTaskHandle;
+osThreadId imuTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -139,10 +140,11 @@ void MX_FREERTOS_Init(void) {
   delayTaskHandle = osThreadCreate(osThread(delayTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  // 添加新的底盘任务
   osThreadDef(chassisTask, chassis_task, osPriorityNormal, 0, 256);
   osThreadCreate(osThread(chassisTask), NULL);
+
+  osThreadDef(imuTask, INS_task, osPriorityRealtime, 0, 1024);
+  imuTaskHandle = osThreadCreate(osThread(imuTask), NULL);
   /* USER CODE END RTOS_THREADS */
 
 }

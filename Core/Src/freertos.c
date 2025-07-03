@@ -31,6 +31,7 @@
 #include "hchassis.h"
 #include "stdio.h"
 #include "rob2.h"
+#include "chassis_task.h"
 //#include "hval_out.h"
 /* USER CODE END Includes */
 
@@ -55,7 +56,7 @@
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 osThreadId RcontrolHandle;
-osThreadId chassis3508Handle;
+//osThreadId chassis3508Handle; // 旧任务句柄已移除
 osThreadId gimbalTaskHandle;
 osThreadId platformHandle;
 osThreadId delayTaskHandle;
@@ -67,7 +68,7 @@ osThreadId delayTaskHandle;
 
 void StartDefaultTask(void const * argument);
 void Buff_ReCf(void const * argument);
-void chassis(void const * argument);
+//void chassis(void const * argument);
 void gimbal(void const * argument);
 void Platform(void const * argument);
 void delay_for_platform(void const * argument);
@@ -125,10 +126,6 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(Rcontrol, Buff_ReCf, osPriorityHigh, 0, 128);
   RcontrolHandle = osThreadCreate(osThread(Rcontrol), NULL);
 
-  /* definition and creation of chassis3508 */
-  osThreadDef(chassis3508, chassis, osPriorityIdle, 0, 128);
-  chassis3508Handle = osThreadCreate(osThread(chassis3508), NULL);
-
   /* definition and creation of gimbalTask */
   osThreadDef(gimbalTask, gimbal, osPriorityIdle, 0, 128);
   gimbalTaskHandle = osThreadCreate(osThread(gimbalTask), NULL);
@@ -143,6 +140,9 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
+  // 添加新的底盘任务
+  osThreadDef(chassisTask, chassis_task, osPriorityNormal, 0, 256);
+  osThreadCreate(osThread(chassisTask), NULL);
   /* USER CODE END RTOS_THREADS */
 
 }
@@ -218,32 +218,6 @@ void Buff_ReCf(void const * argument)
   }
 	
   /* USER CODE END Buff_ReCf */
-}
-
-/* USER CODE BEGIN Header_chassis */
-/**
-* @brief Function implementing the chassis3508 thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_chassis */
-void chassis(void const * argument)
-{
-  /* USER CODE BEGIN chassis */
-  /* Infinite loop */
-  while(1)
-  {
-		if(DBUS_decode_val.over == 1)
-		{
-			
-			chassis_can_cmd(chassis_motor_1_pid(),chassis_motor_2_pid(),chassis_motor_3_pid());
-			HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);
-			printf("%d, %d, %d\n",motor_chassis[0].speed_rpm,motor_chassis[1].speed_rpm,motor_chassis[2].speed_rpm);
-			osDelay(1);
-		}
-		//chassis_can_cmd(0,0,0);
-  }
-  /* USER CODE END chassis */
 }
 
 /* USER CODE BEGIN Header_gimbal */

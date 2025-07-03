@@ -3,6 +3,7 @@
 
 #include "main.h"
 #include "can.h"
+#include "pid.h"
 
 
 #define KP 15.0F
@@ -40,28 +41,16 @@ typedef struct
 
 extern PID_typedef PID1, PID2, PID3;
 
+// 初始化CAN滤波器
 void can_filter_init(void);
+// 初始化PID控制器
+void pid_init(void);
+// 发送底盘电机控制指令
+void chassis_can_cmd(int16_t motor1, int16_t motor2, int16_t motor3);
 
-void chassis_can_cmd(int16_t,int16_t,int16_t);
+// 获取电机PID计算输出
+double chassis_motor_1_pid(void);
+double chassis_motor_2_pid(void);
+double chassis_motor_3_pid(void);
 
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan);
-
-//void chassis_motor_elec_set(void);
-
-void val_clear(void);
-
-void get_motor_measure(motor_measure_t*, uint8_t*);
-
-void pid_init();
-
-double chassis_motor_1_pid();
-
-double chassis_motor_2_pid();
-
-double chassis_motor_3_pid();
-
-//double pid3(PID_typedef *);
-
-//int test(void);
-
-#endif // 
+#endif //

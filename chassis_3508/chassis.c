@@ -66,11 +66,14 @@ void chassis_can_cmd(int16_t motor1, int16_t motor2, int16_t motor3)
 // 接收电机信息
 void get_motor_measure(motor_measure_t *ptr, uint8_t data[])
 {
-	(ptr)->last_ecd = (ptr)->ecd;
-	(ptr)->ecd = (uint16_t)((data)[0] << 8 | (data)[1]);
-	(ptr)->speed_rpm = (uint16_t)((data)[2] << 8 | (data)[3]);
-	(ptr)->given_current = (uint16_t)((data)[4] << 8 | (data)[5]);
-	(ptr)->temperate = (data)[6];
+	for (int i = 0; i < 2; i++)
+	{
+		(ptr)->last_ecd = (ptr)->ecd;
+		(ptr)->ecd = (uint16_t)((data)[0] << 8 | (data)[1]);
+		(ptr)->speed_rpm = (uint16_t)((data)[2] << 8 | (data)[3]);
+		(ptr)->given_current = (uint16_t)((data)[4] << 8 | (data)[5]);
+		(ptr)->temperate = (data)[6];
+	}
 }
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)

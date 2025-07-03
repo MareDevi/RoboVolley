@@ -125,15 +125,15 @@ void val_clear(void)
 {
 	DBUS_decode_val.key = 0;
 	DBUS_decode_val.mod = 0;
-	for(uint8_t i=0; i<4 ;i++)
+	for (uint8_t i = 0; i < 4; i++)
 	{
 		DBUS_decode_val.rocker[i] = 0;
 	}
-	for(uint8_t i=0; i<2 ;i++)
+	for (uint8_t i = 0; i < 2; i++)
 	{
 		DBUS_decode_val.sw[i] = 0;
 	}
-	DBUS_decode_val.roll=0;
+	DBUS_decode_val.roll = 0;
 }
 
 // 初始化pid

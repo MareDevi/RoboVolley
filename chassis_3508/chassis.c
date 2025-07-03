@@ -46,19 +46,18 @@ void can_filter_init(void)
 void chassis_can_cmd(int16_t motor1, int16_t motor2, int16_t motor3)
 {
 	CAN_TxHeaderTypeDef chasis_tx_message;
-	uint8_t chassis_txdata[8] = {0}; // <-- 修正: 将数组大小改为8以匹配DLC
+	uint8_t chassis_txdata[6] = {0};
 	uint32_t send_mail_box;
 	chasis_tx_message.StdId = CAN_CHASSIS_ALL_ID;
 	chasis_tx_message.IDE = CAN_ID_STD;
 	chasis_tx_message.RTR = CAN_RTR_DATA;
-	chasis_tx_message.DLC = 0x08; // 数据长度为8字节
+	chasis_tx_message.DLC = 0x08;
 	chassis_txdata[0] = motor1 >> 8;
 	chassis_txdata[1] = motor1;
 	chassis_txdata[2] = motor2 >> 8;
 	chassis_txdata[3] = motor2;
 	chassis_txdata[4] = motor3 >> 8;
 	chassis_txdata[5] = motor3;
-	// chassis_txdata[6] 和 chassis_txdata[7] 保持为0，用于第四个电机（未使用）
 
 	HAL_CAN_AddTxMessage(&hcan1, &chasis_tx_message, chassis_txdata, &send_mail_box);
 }

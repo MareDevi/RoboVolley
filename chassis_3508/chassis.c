@@ -66,7 +66,6 @@ void chassis_can_cmd(int16_t motor1, int16_t motor2, int16_t motor3)
 // 接收电机信息
 void get_motor_measure(motor_measure_t *ptr, uint8_t data[])
 {
-	// 移除不必要的循环
 	(ptr)->last_ecd = (ptr)->ecd;
 	(ptr)->ecd = (uint16_t)((data)[0] << 8 | (data)[1]);
 	(ptr)->speed_rpm = (uint16_t)((data)[2] << 8 | (data)[3]);

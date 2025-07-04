@@ -323,9 +323,9 @@ void gimbal(void const * argument)
 				motor1_angle = 0.25;//平滑出限位
 				motor1_vec = /*2*/0.5;
 				RobStrite_Motor_Pos_control(&motor1,motor1_vec,motor1_angle);
-				//osDelay(0);
+				osDelay(0);
 				RobStrite_Motor_Pos_control(&motor2,motor1_vec,motor1_angle);
-				//osDelay(0);
+				osDelay(0);
 				RobStrite_Motor_Pos_control(&motor3,motor1_vec,motor1_angle);
 				osDelay(5);
 				DBUS_decode_val.delay_tag =2;
@@ -335,9 +335,9 @@ void gimbal(void const * argument)
 				motor1_angle = 0.005;//非垫球模式最低限位
 				motor1_vec = /*6*/1.5;
 				RobStrite_Motor_Pos_control(&motor1,motor1_vec,motor1_angle);
-				//osDelay(0);
+				osDelay(0);
 				RobStrite_Motor_Pos_control(&motor2,motor1_vec,motor1_angle);
-				//osDelay(0);
+				osDelay(0);
 				RobStrite_Motor_Pos_control(&motor3,motor1_vec,motor1_angle);
 			}
 			else if(DBUS_decode_val.delay_tag == 0 && DBUS_decode_val.bounce_mode == 1)
@@ -345,9 +345,9 @@ void gimbal(void const * argument)
 				motor1_angle = 0.03875;//垫球模式最低限位
 				motor1_vec = /*8*/2;
 				RobStrite_Motor_Pos_control(&motor1,motor1_vec,motor1_angle);
-				//osDelay(0);
+				osDelay(0);
 				RobStrite_Motor_Pos_control(&motor2,motor1_vec,motor1_angle);
-				//osDelay(0);
+				osDelay(0);
 				RobStrite_Motor_Pos_control(&motor3,motor1_vec,motor1_angle);
 				if(DBUS_decode_val.bounce_time++ - 100 > 0)
 				{
@@ -388,9 +388,9 @@ void delay_for_platform(void const * argument)
 		{
 			//osDelay(25);
 			RobStrite_Motor_Pos_control(&motor3, /*6*/1.5, 0.35);
-			//osDelay (0);
+			osDelay(0);
 			RobStrite_Motor_Pos_control(&motor2, /*6*/1.5, 0.35);
-			//osDelay (0);
+			osDelay(0);
 			RobStrite_Motor_Pos_control(&motor1, /*6*/1.5, 0.35);
 			osDelay(5);
 			DBUS_decode_val.delay_tag = 3;
@@ -399,9 +399,9 @@ void delay_for_platform(void const * argument)
 		{
 			//osDelay(25);
 			RobStrite_Motor_Pos_control(&motor3, /*16*/4, 0.45);
-			//osDelay (0);
+			osDelay(0);
 			RobStrite_Motor_Pos_control(&motor2, /*16*/4, 0.45);
-			//osDelay (0);
+			osDelay(0);
 			RobStrite_Motor_Pos_control(&motor1, /*16*/4, 0.45);
 			osDelay(5);
 			DBUS_decode_val.delay_tag = 4;
@@ -409,9 +409,9 @@ void delay_for_platform(void const * argument)
 		else if(DBUS_decode_val.delay_tag == 4)//加速上升
 		{
 			RobStrite_Motor_Pos_control(&motor3, /*24*/6, 0.57);
-			//osDelay (0);
+			osDelay(0);
 			RobStrite_Motor_Pos_control(&motor2, /*24*/6, 0.57);
-			//osDelay (0);
+			osDelay(0);
 			RobStrite_Motor_Pos_control(&motor1, /*24*/6, 0.57);
 			osDelay(5);
 			DBUS_decode_val.delay_tag = 5;
@@ -419,9 +419,9 @@ void delay_for_platform(void const * argument)
 		else if(DBUS_decode_val.delay_tag == 5)//在最顶上减速，保持稳定性
 		{
 			RobStrite_Motor_Pos_control(&motor3, /*3*/1.5, 0.59);
-			//osDelay (0);
+			osDelay(0);
 			RobStrite_Motor_Pos_control(&motor2, /*3*/1.5, 0.59);
-			//osDelay (0);
+			osDelay(0);
 			RobStrite_Motor_Pos_control(&motor1, /*3*/1.5, 0.59);
 			osDelay(100);
 			DBUS_decode_val.delay_tag = 0;

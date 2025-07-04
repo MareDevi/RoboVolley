@@ -2,7 +2,7 @@
 #include <string.h>
 #include "hDBUS.h"
 
-// È«¾Ö±äÁ¿
+// å®šä¹‰
 extern CAN_HandleTypeDef hcan2;
 uint32_t Mailbox;
 RobStrite_Motor motor1;
@@ -10,7 +10,7 @@ RobStrite_Motor motor2;
 RobStrite_Motor motor3;
 RobStrite_Motor motor4;
 
-// Êı¾İÀàĞÍ×ª»»º¯Êı
+// ç±»å‹å˜æ¢
 float uint16_to_float(uint16_t x, float x_min, float x_max, int bits) {
     uint32_t span = (1 << bits) - 1;
     float offset = x_max - x_min;
@@ -30,16 +30,15 @@ float Byte_to_float(uint8_t* bytedata) {
     return *(float*)&data;
 }
 
-// ³õÊ¼»¯º¯Êı
+// åˆå§‹åŒ–
 void RobStrite_Motor_Init(RobStrite_Motor* motor, uint8_t CAN_Id) {
     motor->CAN_ID = CAN_Id;
     motor->Master_CAN_ID = 0xFD;
     motor->Motor_Set_All.set_motor_mode = move_control_mode;
-    motor->Motor_Set_All.output = 0.0f;  // ³õÊ¼»¯output
+    motor->Motor_Set_All.output = 0.0f;  
     motor->Motor_Offset_MotoFunc = NULL;
     motor->error_code = 0;
     
-    // ³õÊ¼»¯Ë÷ÒıÁĞ±í
     static const uint16_t default_index_list[15] = {
         0x2001, 0x2002, 0x2003, 0x2004, 0x2005,
         0x2006, 0x2007, 0x2008, 0x2009, 0x200A,
@@ -73,7 +72,7 @@ void DataReadWrite_Init(DataReadWrite* drw, const uint16_t* index_list) {
     drw->rotation.index = index_list[14];
 }
 
-// ½ÓÊÕÊı¾İ½âÎö
+// æ•°æ®åˆ†æ
 void RobStrite_Motor_Analysis(RobStrite_Motor* motor, uint8_t* DataFrame, uint32_t ID_ExtId) {
     if ((uint8_t)((ID_ExtId & 0xFF00) >> 8) == motor->CAN_ID) {
         if ((int)((ID_ExtId & 0x3F000000) >> 24) == 2) {
@@ -140,7 +139,7 @@ void RobStrite_Motor_Analysis(RobStrite_Motor* motor, uint8_t* DataFrame, uint32
     }
 }
 
-// ¿ØÖÆº¯Êı
+// è·å¾—CAN ID
 void RobStrite_Get_CAN_ID(RobStrite_Motor* motor) {
     uint8_t txdata[8] = {0};
     CAN_TxHeaderTypeDef TxMessage;
@@ -153,6 +152,7 @@ void RobStrite_Get_CAN_ID(RobStrite_Motor* motor) {
     HAL_CAN_AddTxMessage(&hcan2, &TxMessage, txdata, &Mailbox);
 }
 
+// è¿æ§æ¨¡å¼
 void RobStrite_Motor_move_control(RobStrite_Motor* motor, float Torque, float Angle, float Speed, float Kp, float Kd) {
     uint8_t txdata[8] = {0};
     CAN_TxHeaderTypeDef TxMessage;
@@ -188,6 +188,7 @@ void RobStrite_Motor_move_control(RobStrite_Motor* motor, float Torque, float An
     HAL_CAN_AddTxMessage(&hcan2, &TxMessage, txdata, &Mailbox);
 }
 
+// ä½ç½®æ¨¡å¼
 void RobStrite_Motor_Pos_control(RobStrite_Motor* motor, float Speed, float Angle) {
     motor->Motor_Set_All.set_speed = Speed;
     motor->Motor_Set_All.set_angle = Angle;
@@ -203,7 +204,7 @@ void RobStrite_Motor_Pos_control(RobStrite_Motor* motor, float Speed, float Angl
     Set_RobStrite_Motor_parameter(motor, 0x7016, motor->Motor_Set_All.set_angle, Set_parameter);
 }
 
-// ËÙ¶È¿ØÖÆÄ£Ê½
+// é€Ÿåº¦æ¨¡å¼
 uint8_t count_set_motor_mode_Speed = 0;
 void RobStrite_Motor_Speed_control(RobStrite_Motor* motor, float Speed, float acceleration, float limit_cur) {
     motor->Motor_Set_All.set_speed = Speed;
@@ -225,11 +226,11 @@ void RobStrite_Motor_Speed_control(RobStrite_Motor* motor, float Speed, float ac
     Set_RobStrite_Motor_parameter(motor, 0x700A, motor->Motor_Set_All.set_speed, Set_parameter);
 }
 
-// µçÁ÷¿ØÖÆÄ£Ê½
+// ç”µæµæ¨¡å¼
 uint8_t count_set_motor_mode = 0;
 void RobStrite_Motor_current_control(RobStrite_Motor* motor, float current) {
     motor->Motor_Set_All.set_current = current;
-    motor->Motor_Set_All.output = current;  // ĞŞ¸´output·ÃÎÊÎÊÌâ
+    motor->Motor_Set_All.output = current;  
     
     if (motor->Pos_Info.pattern == 2 && motor->Motor_Set_All.set_motor_mode != 3) {
         Set_RobStrite_Motor_parameter(motor, 0x7005, Elect_control_mode, Set_mode);
@@ -244,12 +245,12 @@ void RobStrite_Motor_current_control(RobStrite_Motor* motor, float current) {
     Set_RobStrite_Motor_parameter(motor, 0x7006, motor->Motor_Set_All.set_current, Set_parameter);
 }
 
-// ¹éÁã¿ØÖÆ
+// é›¶ä½æ¨¡å¼
 void RobStrite_Motor_Set_Zero_control(RobStrite_Motor* motor) {
     Set_RobStrite_Motor_parameter(motor, 0x7005, Set_Zero_mode, Set_mode);
 }
 
-// µç»úÊ¹ÄÜ/Ê§ÄÜ
+// ä½¿èƒ½
 void Enable_Motor(RobStrite_Motor* motor) {
     uint8_t txdata[8] = {0};
     CAN_TxHeaderTypeDef TxMessage;
@@ -262,6 +263,7 @@ void Enable_Motor(RobStrite_Motor* motor) {
     HAL_CAN_AddTxMessage(&hcan2, &TxMessage, txdata, &Mailbox);
 }
 
+// å¤±èƒ½
 void Disenable_Motor(RobStrite_Motor* motor, uint8_t clear_error) {
     uint8_t txdata[8] = {0};
     CAN_TxHeaderTypeDef TxMessage;
@@ -275,7 +277,7 @@ void Disenable_Motor(RobStrite_Motor* motor, uint8_t clear_error) {
     HAL_CAN_AddTxMessage(&hcan2, &TxMessage, txdata, &Mailbox);
 }
 
-// ²ÎÊıÉèÖÃ/»ñÈ¡
+// å•ä¸ªå‚æ•°å‘é€
 void Set_RobStrite_Motor_parameter(RobStrite_Motor* motor, uint16_t Index, float Value, char Value_mode) {
     uint8_t txdata[8] = {0};
     CAN_TxHeaderTypeDef TxMessage;
@@ -299,10 +301,12 @@ void Set_RobStrite_Motor_parameter(RobStrite_Motor* motor, uint16_t Index, float
         txdata[6] = 0x00;
         txdata[7] = 0x00;
     }
-
+		
     HAL_CAN_AddTxMessage(&hcan2, &TxMessage, txdata, &Mailbox);
+		//HAL_Delay(1);
 }
 
+//å•ä¸ªå‚æ•°æ¥æ”¶
 void Get_RobStrite_Motor_parameter(RobStrite_Motor* motor, uint16_t Index) {
     uint8_t txdata[8] = {0};
     CAN_TxHeaderTypeDef TxMessage;
@@ -318,7 +322,7 @@ void Get_RobStrite_Motor_parameter(RobStrite_Motor* motor, uint16_t Index) {
     HAL_CAN_AddTxMessage(&hcan2, &TxMessage, txdata, &Mailbox);
 }
 
-// ÉèÖÃCAN IDºÍÁãÎ»
+// è®¾ç½®CAN ID
 void Set_CAN_ID(RobStrite_Motor* motor, uint8_t Set_CAN_ID) {
     Disenable_Motor(motor, 0);
     
@@ -333,6 +337,7 @@ void Set_CAN_ID(RobStrite_Motor* motor, uint8_t Set_CAN_ID) {
     HAL_CAN_AddTxMessage(&hcan2, &TxMessage, txdata, &Mailbox);
 }
 
+// è®¾ç½®é›¶ä½
 void Set_ZeroPos(RobStrite_Motor* motor) {
     Disenable_Motor(motor, 0);
     

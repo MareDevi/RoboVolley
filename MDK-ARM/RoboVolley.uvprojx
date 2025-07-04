@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx,ARM_MATH_CM4,ARM_MATH_MATRIX_CHECK,ARM_MATH_ROUNDING,__CC_ARM</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../DBUS_receive;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../chassis_3508;../vofa;../Possition;../gimbal;../application;../bsp/boards;../components/algorithm;../components/controller;../components/devices;../components/algorithm/Include</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../DBUS_receive;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../chassis_3508;../vofa;../Possition;../gimbal;../application;../bsp/boards;../components/algorithm;../components/controller;../components/devices;../components/algorithm/Include;..\autocontrol</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1839,6 +1839,16 @@
               <FileName>ist8310driver_middleware.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\components\devices\ist8310driver_middleware.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>autocontrol</GroupName>
+          <Files>
+            <File>
+              <FileName>crc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\autocontrol\crc.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -33,6 +33,7 @@
 #include "rob2.h"
 #include "chassis_task.h"
 #include "INS_task.h"
+#include "bsp_buzzer.h"
 //#include "hval_out.h"
 /* USER CODE END Includes */
 
@@ -59,8 +60,9 @@ osThreadId imuTaskHandle;
 osThreadId defaultTaskHandle;
 osThreadId RcontrolHandle;
 osThreadId gimbalTaskHandle;
-osThreadId platformHandle;
 osThreadId delayTaskHandle;
+osThreadId chassisTaskHandle;
+osThreadId imuTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -70,8 +72,9 @@ osThreadId delayTaskHandle;
 void StartDefaultTask(void const * argument);
 void Buff_ReCf(void const * argument);
 void gimbal(void const * argument);
-void Platform(void const * argument);
 void delay_for_platform(void const * argument);
+extern void chassis_task(void const * argument);
+extern void INS_task(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -130,20 +133,19 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(gimbalTask, gimbal, osPriorityIdle, 0, 128);
   gimbalTaskHandle = osThreadCreate(osThread(gimbalTask), NULL);
 
-  /* definition and creation of platform */
-  osThreadDef(platform, Platform, osPriorityIdle, 0, 128);
-  platformHandle = osThreadCreate(osThread(platform), NULL);
-
   /* definition and creation of delayTask */
   osThreadDef(delayTask, delay_for_platform, osPriorityIdle, 0, 128);
   delayTaskHandle = osThreadCreate(osThread(delayTask), NULL);
 
-  /* USER CODE BEGIN RTOS_THREADS */
-  osThreadDef(chassisTask, chassis_task, osPriorityNormal, 0, 256);
-  osThreadCreate(osThread(chassisTask), NULL);
+  /* definition and creation of chassisTask */
+  osThreadDef(chassisTask, chassis_task, osPriorityNormal, 0, 128);
+  chassisTaskHandle = osThreadCreate(osThread(chassisTask), NULL);
 
-  osThreadDef(imuTask, INS_task, osPriorityRealtime, 0, 1024);
+  /* definition and creation of imuTask */
+  osThreadDef(imuTask, INS_task, osPriorityRealtime, 0, 256);
   imuTaskHandle = osThreadCreate(osThread(imuTask), NULL);
+
+  /* USER CODE BEGIN RTOS_THREADS */
   /* USER CODE END RTOS_THREADS */
 
 }
@@ -187,34 +189,77 @@ void Buff_ReCf(void const * argument)
 		if(DBUS_decode_val.key == 0 && DBUS_decode_val.mod == 1)
 		{
 			DBUS_decode_val.mod = 0;
-			//�ص��
+			//关电机
 			val_clear();
-			DBUS_decode_val.over = 0;//
+			DBUS_decode_val.control_mode = 0;//
 			DBUS_decode_val.pitch = 0;//
 			DBUS_decode_val.delay_tag = 0;//
 			Disenable_Motor(&motor4,0);//
 			Disenable_Motor(&motor1,0);//
+			osDelay(0);
+			Disenable_Motor(&motor2,0);//
+			Disenable_Motor(&motor3,0);//
 			//HAL_CAN_Stop(&hcan1);		
 		}
 		else if(DBUS_decode_val.key == 1 && DBUS_decode_val.mod == 0)
 		{
 			DBUS_decode_val.mod = 1;
-			//�����
+			DBUS_decode_val.control_mode = 0;
+			//开电机
 			can_filter_init();
-			RobStrite_Motor_Init(&motor4, 0x04);//
+			RobStrite_Motor_Init(&motor4, 0x04);
 			RobStrite_Motor_Init(&motor1, 0x01);
-			Set_RobStrite_Motor_parameter(&motor4, 0x7005, 5, Set_mode);//
-			Set_RobStrite_Motor_parameter(&motor1, 0x7005, 5, Set_mode);
-			osDelay(2);//
-			Enable_Motor(&motor4);//
+			RobStrite_Motor_Init(&motor2, 0x02);
+			RobStrite_Motor_Init(&motor3, 0x03);
+			
+			Set_RobStrite_Motor_parameter(&motor4, 0x7005, 5, Set_mode);
+			Set_RobStrite_Motor_parameter(&motor1, 0x7005, 3, Set_mode);
+			osDelay(0);
+			Set_RobStrite_Motor_parameter(&motor2, 0x7005, 3, Set_mode);
+			Set_RobStrite_Motor_parameter(&motor3, 0x7005, 3, Set_mode);
 			osDelay(2);
-			Set_ZeroPos(&motor1);
+			Enable_Motor(&motor4);
+//			Enable_Motor(&motor1);
+//			osDelay(0);
+//			Enable_Motor(&motor2);
+//			Enable_Motor(&motor3);
 			osDelay(2);
-			RobStrite_Motor_Pos_control(&motor1,1,0.02);
+//		gimbal_angle_control(&motor1, PID_g[0], PID_v[0], 0.02);
+//		gimbal_angle_control(&motor2, PID_g[1], PID_v[1], 0.02);
+//		gimbal_angle_control(&motor3, PID_g[2], PID_v[2], 0.02);
 			//Set_RobStrite_Motor_parameter(&motor4, 0x7017, 0.6, Set_parameter);
-			DBUS_decode_val.over = 1;//
-			DBUS_decode_val.pitch = 0;//
+			DBUS_decode_val.pitch = 0;
 			pid_init();
+		}
+		if(DBUS_decode_val.key == 1)
+		{
+			switch (DBUS_decode_val.sw[0])
+			{
+				case 1:
+					DBUS_decode_val.control_mode = 2;//上位机控制模式
+					break;
+				case 2:
+					DBUS_decode_val.control_mode = 0;//关机
+					break;
+				case 3:
+					DBUS_decode_val.control_mode = 1;//遥控器控制模式
+					break;
+				default:
+					break;
+			}
+			//chassis_can_cmd(DBUS_decode_val.sw[0],DBUS_decode_val.sw[1],DBUS_decode_val.control_mode);
+			if(DBUS_decode_val.control_mode != 0 && DBUS_decode_val.sw[1] == 1)
+			{
+				osDelay(50);
+				if(DBUS_decode_val.sw[1] == 3)
+				{
+					HAL_TIM_Base_Start(&htim4);
+					HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
+					buzzer_on(0, 10000);
+					osDelay(500);
+					HAL_TIM_PWM_Stop(&htim4,TIM_CHANNEL_3);
+				}
+			}
 		}
   }
 	
@@ -237,7 +282,7 @@ void gimbal(void const * argument)
 	double motor1_vec = 1.0;
   while(1)
 	{
-		if(DBUS_decode_val.over == 1)
+		if(DBUS_decode_val.control_mode == 1)//遥控器控制
 		{
 			DBUS_decode_val.pitch += (-0.0000025f * DBUS_decode_val.rocker[1]);
 			if(DBUS_decode_val.pitch >= 0.1)
@@ -245,77 +290,34 @@ void gimbal(void const * argument)
 			if(DBUS_decode_val.pitch <= -0.8)
 					DBUS_decode_val.pitch = -0.8;	
 			RobStrite_Motor_Pos_control(&motor4, 0.6, DBUS_decode_val.pitch);
-			//Set_RobStrite_Motor_parameter(&motor1, 0x7016, DBUS_decode_val.pitch, Set_parameter);
+			//Set_RobStrite_Motor_parameter(&motor4, 0x7016, DBUS_decode_val.pitch, Set_parameter);
 			osDelay(1);
 			if(DBUS_decode_val.delay_tag == 1)
 			{  
-				motor1_angle = 0.15;
-				motor1_vec = 1;
 				DBUS_decode_val.delay_tag =2;
-				RobStrite_Motor_Pos_control(&motor1,motor1_vec,motor1_angle);
+//				gimbal_angle_control(&motor1, PID_g[0], PID_v[0], 0.45);
+//				gimbal_angle_control(&motor2, PID_g[1], PID_v[1], 0.45);
+//				gimbal_angle_control(&motor3, PID_g[2], PID_v[2], 0.45);
 			}
 			else if(DBUS_decode_val.delay_tag == 0)
 			{
-				motor1_angle = 0.02;
-				motor1_vec = 1;
-				RobStrite_Motor_Pos_control(&motor1,motor1_vec,motor1_angle);
+//				gimbal_angle_control(&motor1, PID_g[0], PID_v[0], 0.02);
+//				gimbal_angle_control(&motor2, PID_g[1], PID_v[1], 0.02);
+//				gimbal_angle_control(&motor3, PID_g[2], PID_v[2], 0.02);
 			}
-			if(DBUS_decode_val.roll >= 100 && DBUS_decode_val.delay_tag == 0)
+			if(DBUS_decode_val.roll == 660 && DBUS_decode_val.delay_tag == 0)
 			{
 				DBUS_decode_val.delay_tag = 1;
 			}
-			osDelay(3);
+			osDelay(1);
+		}
+		else if(DBUS_decode_val.control_mode == 2)//上位机控制
+		{
+			;
 		}
 		
 	}
   /* USER CODE END gimbal */
-}
-
-/* USER CODE BEGIN Header_Platform */
-/**
-* @brief Function implementing the platform thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_Platform */
-void Platform(void const * argument)
-{
-  /* USER CODE BEGIN Platform */
-  /* Infinite loop */
-//	DBUS_decode_val.delay_tag = 0;
-//	double motor1_angle = 0.02;
-//	double motor1_vec = 1.0;
-  while(1)
-  {
-	}
-	
-//		//chassis_can_cmd(1,2,3);
-//		
-//		if(DBUS_decode_val.over == 1)
-//	  {
-//			
-//			if(DBUS_decode_val.delay_tag == 1)
-//		  {  
-//				motor1_angle = 0.45;
-//				motor1_vec = 8;
-//				DBUS_decode_val.delay_tag =2;
-//				RobStrite_Motor_Pos_control(&motor1,motor1_vec,motor1_angle);
-//		  }
-//			else if(DBUS_decode_val.delay_tag == 0)
-//			{
-//				motor1_angle = 0.02;
-//				motor1_vec = 1;
-//				RobStrite_Motor_Pos_control(&motor1,motor1_vec,motor1_angle);
-//			}
-//			if(DBUS_decode_val.roll >= 100 && DBUS_decode_val.delay_tag == 0)
-//			{
-//				DBUS_decode_val.delay_tag = 1;
-//			}
-//			
-//	  }
-//		osDelay(1);
-//	  
-  /* USER CODE END Platform */
 }
 
 /* USER CODE BEGIN Header_delay_for_platform */
@@ -333,12 +335,10 @@ void delay_for_platform(void const * argument)
 	{
 		if(DBUS_decode_val.delay_tag == 2)
 		{
-			osDelay(150);
-			RobStrite_Motor_Pos_control(&motor1, 8, 0.45);
-			osDelay(1850);
+			osDelay(2000);
 			DBUS_decode_val.delay_tag = 0;
 		}
-		osDelay(3);
+		osDelay(2);
 	}
   /* USER CODE END delay_for_platform */
 }

@@ -21,7 +21,7 @@ typedef struct
 	int roll;
 	int key;
 	int mod;
-	int over;
+	int control_mode;
 	double pitch;
 	int delay_tag;
 } DECODE_VAL;

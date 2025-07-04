@@ -32,7 +32,7 @@
 #include "bmi088driver.h"
 #include "ist8310driver.h"
 #include "pid.h"
-
+#include "hDBUS.h"
 #include "MahonyAHRS.h"
 #include "math.h"
 
@@ -160,29 +160,32 @@ void INS_task(void const *pvParameters)
         {
         }
 
+				if(DBUS_decode_val.control_mode != 0)
+				{
+						if(gyro_update_flag & (1 << IMU_NOTIFY_SHFITS))
+						{
+								gyro_update_flag &= ~(1 << IMU_NOTIFY_SHFITS);
+								BMI088_gyro_read_over(gyro_dma_rx_buf + BMI088_GYRO_RX_BUF_DATA_OFFSET, bmi088_real_data.gyro);
+						}
 
-        if(gyro_update_flag & (1 << IMU_NOTIFY_SHFITS))
-        {
-            gyro_update_flag &= ~(1 << IMU_NOTIFY_SHFITS);
-            BMI088_gyro_read_over(gyro_dma_rx_buf + BMI088_GYRO_RX_BUF_DATA_OFFSET, bmi088_real_data.gyro);
-        }
+						if(accel_update_flag & (1 << IMU_UPDATE_SHFITS))
+						{
+								accel_update_flag &= ~(1 << IMU_UPDATE_SHFITS);
+								BMI088_accel_read_over(accel_dma_rx_buf + BMI088_ACCEL_RX_BUF_DATA_OFFSET, bmi088_real_data.accel, &bmi088_real_data.time);
+						}
 
-        if(accel_update_flag & (1 << IMU_UPDATE_SHFITS))
-        {
-            accel_update_flag &= ~(1 << IMU_UPDATE_SHFITS);
-            BMI088_accel_read_over(accel_dma_rx_buf + BMI088_ACCEL_RX_BUF_DATA_OFFSET, bmi088_real_data.accel, &bmi088_real_data.time);
-        }
-
-        if(accel_temp_update_flag & (1 << IMU_UPDATE_SHFITS))
-        {
-            accel_temp_update_flag &= ~(1 << IMU_UPDATE_SHFITS);
-            BMI088_temperature_read_over(accel_temp_dma_rx_buf + BMI088_ACCEL_RX_BUF_DATA_OFFSET, &bmi088_real_data.temp);
-            imu_temp_control(bmi088_real_data.temp);
-        }
+						if(accel_temp_update_flag & (1 << IMU_UPDATE_SHFITS))
+						{
+								accel_temp_update_flag &= ~(1 << IMU_UPDATE_SHFITS);
+								BMI088_temperature_read_over(accel_temp_dma_rx_buf + BMI088_ACCEL_RX_BUF_DATA_OFFSET, &bmi088_real_data.temp);
+								imu_temp_control(bmi088_real_data.temp);
+						}
 
 
-        AHRS_update(INS_quat, 0.001f, bmi088_real_data.gyro, bmi088_real_data.accel, ist8310_real_data.mag);
-        get_angle(INS_quat, INS_angle + INS_YAW_ADDRESS_OFFSET, INS_angle + INS_PITCH_ADDRESS_OFFSET, INS_angle + INS_ROLL_ADDRESS_OFFSET);
+						AHRS_update(INS_quat, 0.001f, bmi088_real_data.gyro, bmi088_real_data.accel, ist8310_real_data.mag);
+						get_angle(INS_quat, INS_angle + INS_YAW_ADDRESS_OFFSET, INS_angle + INS_PITCH_ADDRESS_OFFSET, INS_angle + INS_ROLL_ADDRESS_OFFSET);	
+				}
+        
 
 
     }

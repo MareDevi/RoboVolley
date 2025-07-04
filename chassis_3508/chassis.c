@@ -10,7 +10,7 @@
 #define CAN_3508_M1_ID 0x201
 #define CAN_3508_M2_ID 0x202
 #define CAN_3508_M3_ID 0x203
-#define KV 7.0F
+#define KV 2.0F
 
 // PID信息
 PID_typedef PID1;
@@ -174,7 +174,7 @@ void pid_init()
 }
 
 // 控制pid电机控制程序
-double chassis_motor_1_pid() // 左侧电机
+double chassis_motor_1_pid() // 电机1
 {
 	double vx = DBUS_decode_val.rocker[2] * KV;
 	double vy = DBUS_decode_val.rocker[3] * KV;
@@ -187,7 +187,7 @@ double chassis_motor_1_pid() // 左侧电机
 	vx = vx_set;
 	vy = vy_set;
 
-	double target_val = -1.2 * vx + vc;
+	double target_val = (-vx + vc) * 6.0F;
 	double current_val = motor_chassis[0].speed_rpm;
 
 	PID1.his_error = PID1.cur_error;
@@ -208,9 +208,11 @@ double chassis_motor_1_pid() // 左侧电机
 	return PID1.out;
 }
 
-double chassis_motor_2_pid() // 后侧电机
+
+
+double chassis_motor_2_pid() // 电机2
 {
-	double vx = DBUS_decode_val.rocker[2] * KV;
+	double vx = DBUS_decode_val.rocker[2];
 	double vy = DBUS_decode_val.rocker[3] * KV;
 	double vc = DBUS_decode_val.rocker[0] * KV;
 
@@ -221,7 +223,7 @@ double chassis_motor_2_pid() // 后侧电机
 	vx = vx_set;
 	vy = vy_set;
 
-	double target_val = vx / 2.0 + vc + vy;
+	double target_val = (vx + vy + vc) * 6.0F;
 	double current_val = motor_chassis[1].speed_rpm;
 
 	PID2.his_error = PID2.cur_error;
@@ -241,9 +243,9 @@ double chassis_motor_2_pid() // 后侧电机
 	return PID2.out;
 }
 
-double chassis_motor_3_pid() // 右侧电机
+double chassis_motor_3_pid() // 电机3
 {
-	double vx = DBUS_decode_val.rocker[2] * KV;
+	double vx = DBUS_decode_val.rocker[2]; // 修正：添加KV系数
 	double vy = DBUS_decode_val.rocker[3] * KV;
 	double vc = DBUS_decode_val.rocker[0] * KV;
 
@@ -254,7 +256,8 @@ double chassis_motor_3_pid() // 右侧电机
 	vx = vx_set;
 	vy = vy_set;
 
-	double target_val = vx / 2.0 + vc - vy;
+	// 三轮布局运动学：电机3在右上，240度角
+	double target_val = (vx - vy + vc) * 6.0F;
 	double current_val = motor_chassis[2].speed_rpm;
 
 	PID3.his_error = PID3.cur_error;

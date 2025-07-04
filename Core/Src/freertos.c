@@ -38,7 +38,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+osThreadId imuTaskHandle;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -64,6 +64,7 @@ osThreadId delayTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
+void start_INS_task(void const * argument);
 
 /* USER CODE END FunctionPrototypes */
 
@@ -142,7 +143,7 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(chassisTask, chassis_task, osPriorityNormal, 0, 256);
   osThreadCreate(osThread(chassisTask), NULL);
 
-  osThreadDef(imuTask, INS_task, osPriorityRealtime, 0, 1024);
+  osThreadDef(imuTask, start_INS_task, osPriorityRealtime, 0, 1024);
   imuTaskHandle = osThreadCreate(osThread(imuTask), NULL);
   /* USER CODE END RTOS_THREADS */
 
@@ -345,5 +346,12 @@ void delay_for_platform(void const * argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-
+void start_INS_task(void const * argurment)
+{
+	INS_Init();
+	while(1){
+		INS_Task();
+		osDelay(1);
+	}
+}
 /* USER CODE END Application */

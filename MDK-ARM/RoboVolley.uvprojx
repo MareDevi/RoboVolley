@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx,ARM_MATH_CM4,ARM_MATH_MATRIX_CHECK,ARM_MATH_ROUNDING,__CC_ARM</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../DBUS_receive;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../vofa;../Possition;../gimbal;../application;../bsp/boards;..\Components;..\Components\Algorithm;..\Components\Algorithm\Include;..\Components\Controller;..\Components\Devices;..\chassis_3508</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../DBUS_receive;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../chassis_3508;../vofa;../Possition;../gimbal;../application;../bsp/boards;../components/algorithm;../components/controller;../components/devices;..\components\algorithm\Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1737,29 +1737,19 @@
           <GroupName>board</GroupName>
           <Files>
             <File>
-              <FileName>bsp_delay.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\bsp\boards\bsp_delay.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_dwt.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\bsp\boards\bsp_dwt.c</FilePath>
-            </File>
-            <File>
               <FileName>bsp_imu_pwm.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\bsp\boards\bsp_imu_pwm.c</FilePath>
             </File>
             <File>
-              <FileName>bsp_PWM.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\bsp\boards\bsp_PWM.c</FilePath>
-            </File>
-            <File>
               <FileName>bsp_spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\bsp\boards\bsp_spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_delay.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\bsp\boards\bsp_delay.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1767,14 +1757,14 @@
           <GroupName>application</GroupName>
           <Files>
             <File>
-              <FileName>chassis_task.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\application\chassis_task.c</FilePath>
-            </File>
-            <File>
               <FileName>INS_task.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\application\INS_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>chassis_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\chassis_task.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1782,24 +1772,29 @@
           <GroupName>algorithm</GroupName>
           <Files>
             <File>
-              <FileName>QuaternionEKF.c</FileName>
+              <FileName>MahonyAHRS.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Components\Algorithm\QuaternionEKF.c</FilePath>
-            </File>
-            <File>
-              <FileName>kalman_filter.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Components\kalman_filter.c</FilePath>
+              <FilePath>..\components\algorithm\MahonyAHRS.c</FilePath>
             </File>
             <File>
               <FileName>user_lib.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Components\user_lib.c</FilePath>
+              <FilePath>..\components\algorithm\user_lib.c</FilePath>
+            </File>
+            <File>
+              <FileName>kalman_filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\components\algorithm\kalman_filter.c</FilePath>
+            </File>
+            <File>
+              <FileName>QuaternionEKF.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\components\algorithm\QuaternionEKF.c</FilePath>
             </File>
             <File>
               <FileName>arm_cortexM4lf_math.lib</FileName>
               <FileType>4</FileType>
-              <FilePath>..\Components\Algorithm\arm_cortexM4lf_math.lib</FilePath>
+              <FilePath>..\components\algorithm\arm_cortexM4lf_math.lib</FilePath>
             </File>
           </Files>
         </Group>
@@ -1807,9 +1802,9 @@
           <GroupName>controller</GroupName>
           <Files>
             <File>
-              <FileName>controller.c</FileName>
+              <FileName>pid.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Components\Controller\controller.c</FilePath>
+              <FilePath>..\components\controller\pid.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1819,17 +1814,22 @@
             <File>
               <FileName>BMI088driver.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Components\Devices\BMI088driver.c</FilePath>
+              <FilePath>..\components\devices\BMI088driver.c</FilePath>
             </File>
             <File>
               <FileName>BMI088Middleware.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Components\Devices\BMI088Middleware.c</FilePath>
+              <FilePath>..\components\devices\BMI088Middleware.c</FilePath>
             </File>
             <File>
-              <FileName>transfer_function.c</FileName>
+              <FileName>ist8310driver.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Components\Devices\transfer_function.c</FilePath>
+              <FilePath>..\components\devices\ist8310driver.c</FilePath>
+            </File>
+            <File>
+              <FileName>ist8310driver_middleware.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\components\devices\ist8310driver_middleware.c</FilePath>
             </File>
           </Files>
         </Group>

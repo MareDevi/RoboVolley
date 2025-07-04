@@ -13,9 +13,9 @@ void chassis_task(void const *argument)
 
     for(;;)
     {
-        int16_t motor1_out = (int16_t)chassis_motor_1_pid_v2();
-        int16_t motor2_out = (int16_t)chassis_motor_2_pid_v2();
-        int16_t motor3_out = (int16_t)chassis_motor_3_pid_v2();
+        int16_t motor1_out = (int16_t)chassis_motor_1_pid();
+        int16_t motor2_out = (int16_t)chassis_motor_2_pid();
+        int16_t motor3_out = (int16_t)chassis_motor_3_pid();
 
         chassis_can_cmd(motor1_out, motor2_out, motor3_out);
 

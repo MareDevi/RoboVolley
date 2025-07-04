@@ -3,6 +3,7 @@
 
 #include "main.h"
 #include "can.h"
+#include "pid.h"
 
 
 #define KP 15.0F
@@ -54,10 +55,5 @@ double chassis_motor_3_pid(void);
 
 // 清除数值
 void val_clear(void);
-
-// 使用新INS接口的底盘控制函数（推荐使用）
-double chassis_motor_1_pid_v2(void);
-double chassis_motor_2_pid_v2(void); 
-double chassis_motor_3_pid_v2(void);
 
 #endif //

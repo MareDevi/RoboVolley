@@ -126,6 +126,8 @@ void Set_RobStrite_Motor_parameter(RobStrite_Motor* motor, uint16_t Index, float
 void Get_RobStrite_Motor_parameter(RobStrite_Motor* motor, uint16_t Index);
 void Set_CAN_ID(RobStrite_Motor* motor, uint8_t Set_CAN_ID);
 void Set_ZeroPos(RobStrite_Motor* motor);
+void Set_RobStrite_3Motor_simully_parameter(RobStrite_Motor* motor1, RobStrite_Motor* motor2, RobStrite_Motor* motor3, uint16_t Index, float Value, char Value_mode);
+void RobStrite_3Motor_simully_Pos_control(RobStrite_Motor* motor1,RobStrite_Motor* motor2,RobStrite_Motor* motor3, float Speed, float Angle);
 #endif  //__ROBSTRITE_H__
 
 #ifndef SHARED_H

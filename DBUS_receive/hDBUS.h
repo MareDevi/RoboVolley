@@ -21,9 +21,12 @@ typedef struct
 	int roll;
 	int key;
 	int mod;
-	int over;
+	int control_mode;
 	double pitch;
 	int delay_tag;
+	int bounce_mode;
+	int bounce_time;
+	int isenable;
 } DECODE_VAL;
 
 extern DECODE_VAL DBUS_decode_val;

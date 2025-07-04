@@ -314,41 +314,29 @@ void gimbal(void const * argument)
 			if(DBUS_decode_val.pitch <= -0.8)
 					DBUS_decode_val.pitch = -0.8;	
 			RobStrite_Motor_Pos_control(&motor4, 1.2, DBUS_decode_val.pitch);
-			//Set_RobStrite_Motor_parameter(&motor1, 0x7016, DBUS_decode_val.pitch, Set_parameter);
 			osDelay(1);
-			//上面是pitch轴
 			
 			if(DBUS_decode_val.delay_tag == 1)
 			{  
-				motor1_angle = 0.25;//平滑出限位
-				motor1_vec = /*2*/0.5;
-				RobStrite_Motor_Pos_control(&motor1,motor1_vec,motor1_angle);
-				osDelay(0);
-				RobStrite_Motor_Pos_control(&motor2,motor1_vec,motor1_angle);
-				osDelay(0);
-				RobStrite_Motor_Pos_control(&motor3,motor1_vec,motor1_angle);
-				osDelay(5);
+				motor1_angle = 0.25;
+				motor1_vec = /*1*/0.25;
+				RobStrite_3Motor_simully_Pos_control(&motor1,&motor2,&motor3,motor1_vec,motor1_angle);
+				osDelay(25);
 				DBUS_decode_val.delay_tag =2;
 			}
 			else if(DBUS_decode_val.delay_tag == 0 && DBUS_decode_val.bounce_mode == 0/*&& DBUS_decode_val.roll < 600*/)
 			{
-				motor1_angle = 0.005;//非垫球模式最低限位
-				motor1_vec = /*6*/1.5;
-				RobStrite_Motor_Pos_control(&motor1,motor1_vec,motor1_angle);
-				osDelay(0);
-				RobStrite_Motor_Pos_control(&motor2,motor1_vec,motor1_angle);
-				osDelay(0);
-				RobStrite_Motor_Pos_control(&motor3,motor1_vec,motor1_angle);
+				motor1_angle = 0.005;
+				motor1_vec = /*6*/3;
+				RobStrite_3Motor_simully_Pos_control(&motor1,&motor2,&motor3,motor1_vec,motor1_angle);
+				osDelay(0);	
 			}
 			else if(DBUS_decode_val.delay_tag == 0 && DBUS_decode_val.bounce_mode == 1)
 			{
-				motor1_angle = 0.03875;//垫球模式最低限位
-				motor1_vec = /*8*/2;
-				RobStrite_Motor_Pos_control(&motor1,motor1_vec,motor1_angle);
-				osDelay(0);
-				RobStrite_Motor_Pos_control(&motor2,motor1_vec,motor1_angle);
-				osDelay(0);
-				RobStrite_Motor_Pos_control(&motor3,motor1_vec,motor1_angle);
+				motor1_angle = 0.03875;
+				motor1_vec = /*8*/4;
+				RobStrite_3Motor_simully_Pos_control(&motor1,&motor2,&motor3,motor1_vec,motor1_angle);
+				osDelay(0);	
 				if(DBUS_decode_val.bounce_time++ - 100 > 0)
 				{
 					DBUS_decode_val.bounce_mode = 0;
@@ -360,7 +348,7 @@ void gimbal(void const * argument)
 				DBUS_decode_val.delay_tag = 1;
 				DBUS_decode_val.bounce_mode = 1;
 			}
-			osDelay(2);
+			osDelay(3);
 		}
 		else if(DBUS_decode_val.control_mode == 2)//上位机控制
 		{
@@ -384,45 +372,27 @@ void delay_for_platform(void const * argument)
   /* Infinite loop */
   while(1)
 	{
-		if(DBUS_decode_val.delay_tag == 2)//过度态
+		if(DBUS_decode_val.delay_tag == 2)//ڽ׈̬
 		{
-			//osDelay(25);
-			RobStrite_Motor_Pos_control(&motor3, /*6*/1.5, 0.35);
-			osDelay(0);
-			RobStrite_Motor_Pos_control(&motor2, /*6*/1.5, 0.35);
-			osDelay(0);
-			RobStrite_Motor_Pos_control(&motor1, /*6*/1.5, 0.35);
-			osDelay(5);
+			RobStrite_3Motor_simully_Pos_control(&motor1,&motor2,&motor3,/*6*/1.5,0.35);
+			osDelay(25);
 			DBUS_decode_val.delay_tag = 3;
 		}
 		else if (DBUS_decode_val.delay_tag == 3)
 		{
-			//osDelay(25);
-			RobStrite_Motor_Pos_control(&motor3, /*16*/4, 0.45);
-			osDelay(0);
-			RobStrite_Motor_Pos_control(&motor2, /*16*/4, 0.45);
-			osDelay(0);
-			RobStrite_Motor_Pos_control(&motor1, /*16*/4, 0.45);
-			osDelay(5);
+			RobStrite_3Motor_simully_Pos_control(&motor1,&motor2,&motor3,/*16*/4,0.45);
+			osDelay(25);
 			DBUS_decode_val.delay_tag = 4;
 		}
-		else if(DBUS_decode_val.delay_tag == 4)//加速上升
+		else if(DBUS_decode_val.delay_tag == 4)//ݓ̙ʏʽ
 		{
-			RobStrite_Motor_Pos_control(&motor3, /*24*/6, 0.57);
-			osDelay(0);
-			RobStrite_Motor_Pos_control(&motor2, /*24*/6, 0.57);
-			osDelay(0);
-			RobStrite_Motor_Pos_control(&motor1, /*24*/6, 0.57);
-			osDelay(5);
+			RobStrite_3Motor_simully_Pos_control(&motor1,&motor2,&motor3,/*24*/6,0.57);
+			osDelay(25);
 			DBUS_decode_val.delay_tag = 5;
 		}
-		else if(DBUS_decode_val.delay_tag == 5)//在最顶上减速，保持稳定性
+		else if(DBUS_decode_val.delay_tag == 5)//՚خ֥ʏݵ̙ìѣԖψ֨є
 		{
-			RobStrite_Motor_Pos_control(&motor3, /*3*/1.5, 0.59);
-			osDelay(0);
-			RobStrite_Motor_Pos_control(&motor2, /*3*/1.5, 0.59);
-			osDelay(0);
-			RobStrite_Motor_Pos_control(&motor1, /*3*/1.5, 0.59);
+			RobStrite_3Motor_simully_Pos_control(&motor1,&motor2,&motor3,/*3*/1.5,0.59);
 			osDelay(100);
 			DBUS_decode_val.delay_tag = 0;
 		}

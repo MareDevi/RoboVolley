@@ -354,3 +354,53 @@ void Set_ZeroPos(RobStrite_Motor* motor) {
     
     Enable_Motor(motor);
 }
+
+void Set_RobStrite_3Motor_simully_parameter(RobStrite_Motor* motor1, RobStrite_Motor* motor2, RobStrite_Motor* motor3, uint16_t Index, float Value, char Value_mode) {
+    uint8_t txdata[8] = {0};
+    CAN_TxHeaderTypeDef TxMessage;
+		
+    
+    TxMessage.IDE = CAN_ID_EXT;
+    TxMessage.RTR = CAN_RTR_DATA;
+    TxMessage.DLC = 8;
+    
+    txdata[0] = Index;
+    txdata[1] = Index >> 8;
+    txdata[2] = 0x00;
+    txdata[3] = 0x00;
+    
+    if (Value_mode == Set_parameter) {
+        memcpy(&txdata[4], &Value, 4);
+    } else if (Value_mode == Set_mode) {
+        motor1->Motor_Set_All.set_motor_mode = (int)Value;
+				motor2->Motor_Set_All.set_motor_mode = (int)Value;
+				motor3->Motor_Set_All.set_motor_mode = (int)Value;	
+        txdata[4] = (uint8_t)Value;
+        txdata[5] = 0x00;
+        txdata[6] = 0x00;
+        txdata[7] = 0x00;
+    }
+    
+    TxMessage.ExtId = Communication_Type_SetSingleParameter << 24 | motor1->Master_CAN_ID << 8 | motor1->CAN_ID;
+		HAL_CAN_AddTxMessage(&hcan2, &TxMessage, txdata, &Mailbox);
+		HAL_Delay(1);
+		
+		TxMessage.ExtId = Communication_Type_SetSingleParameter << 24 | motor2->Master_CAN_ID << 8 | motor2->CAN_ID;
+		HAL_CAN_AddTxMessage(&hcan2, &TxMessage, txdata, &Mailbox);
+		HAL_Delay(1);
+
+		TxMessage.ExtId = Communication_Type_SetSingleParameter << 24 | motor3->Master_CAN_ID << 8 | motor3->CAN_ID;
+    HAL_CAN_AddTxMessage(&hcan2, &TxMessage, txdata, &Mailbox);
+		HAL_Delay(1);
+		
+}
+
+//三个电机控制位置函数
+void RobStrite_3Motor_simully_Pos_control(RobStrite_Motor* motor1,RobStrite_Motor* motor2,RobStrite_Motor* motor3, float Speed, float Angle) {
+    motor1->Motor_Set_All.set_speed = Speed;
+    motor1->Motor_Set_All.set_angle = Angle;
+    
+    Set_RobStrite_3Motor_simully_parameter(motor1,motor2,motor3,0x7017,motor1->Motor_Set_All.set_speed,Set_parameter);
+	
+	  Set_RobStrite_3Motor_simully_parameter(motor1,motor2,motor3,0x7016,motor1->Motor_Set_All.set_angle,Set_parameter);
+}

@@ -173,6 +173,8 @@ void pid_init()
 	PID3.out = 0;
 }
 
+double yaw;
+
 // 控制pid电机控制程序
 double chassis_motor_1_pid() // 电机1
 {
@@ -180,8 +182,10 @@ double chassis_motor_1_pid() // 电机1
 	double vy = DBUS_decode_val.rocker[3] * KV;
 	double vc = DBUS_decode_val.rocker[0] * KV;
 
-	double sin_yaw = sin(get_INS_angle_point()[0]);
-	double cos_yaw = cos(get_INS_angle_point()[0]);
+	yaw = - get_INS_angle_point()[0];
+	if(yaw >= -0.01 && yaw <= 0.01)yaw = 0;
+	double sin_yaw = sin(yaw);
+	double cos_yaw = cos(yaw);
 	double vx_set = cos_yaw * vx - sin_yaw * vy;
 	double vy_set = sin_yaw * vx + cos_yaw * vy;
 	vx = vx_set;
@@ -208,16 +212,16 @@ double chassis_motor_1_pid() // 电机1
 	return PID1.out;
 }
 
-
-
 double chassis_motor_2_pid() // 电机2
 {
 	double vx = DBUS_decode_val.rocker[2];
 	double vy = DBUS_decode_val.rocker[3] * KV;
 	double vc = DBUS_decode_val.rocker[0] * KV;
-
-	double sin_yaw = sin(get_INS_angle_point()[0]);
-	double cos_yaw = cos(get_INS_angle_point()[0]);
+	
+	yaw = - get_INS_angle_point()[0];
+	if(yaw >= -0.01 && yaw <= 0.01)yaw = 0;
+	double sin_yaw = sin(yaw);
+	double cos_yaw = cos(yaw);
 	double vx_set = cos_yaw * vx - sin_yaw * vy;
 	double vy_set = sin_yaw * vx + cos_yaw * vy;
 	vx = vx_set;
@@ -249,8 +253,10 @@ double chassis_motor_3_pid() // 电机3
 	double vy = DBUS_decode_val.rocker[3] * KV;
 	double vc = DBUS_decode_val.rocker[0] * KV;
 
-	double sin_yaw = sin(get_INS_angle_point()[0]);
-	double cos_yaw = cos(get_INS_angle_point()[0]);
+	yaw = - get_INS_angle_point()[0];
+	if(yaw >= -0.01 && yaw <= 0.01)yaw = 0;
+	double sin_yaw = sin(yaw);
+	double cos_yaw = cos(yaw);
 	double vx_set = cos_yaw * vx - sin_yaw * vy;
 	double vy_set = sin_yaw * vx + cos_yaw * vy;
 	vx = vx_set;

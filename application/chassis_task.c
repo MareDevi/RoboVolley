@@ -32,6 +32,8 @@ void chassis_task(void const *argument)
             int16_t motor3_out = (int16_t)chassis_motor_3_pid_stop();
             
             chassis_can_cmd(motor1_out, motor2_out, motor3_out);
+            HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);
+
         }
         osDelay(10);
     }

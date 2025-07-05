@@ -351,6 +351,8 @@ void Set_ZeroPos(RobStrite_Motor* motor) {
     
     txdata[0] = 1;
     HAL_CAN_AddTxMessage(&hcan2, &TxMessage, txdata, &Mailbox);
+		
+		HAL_Delay(2);
     
     Enable_Motor(motor);
 }

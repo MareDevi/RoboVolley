@@ -220,6 +220,7 @@ void Buff_ReCf(void const * argument)
 			
 			Set_RobStrite_Motor_parameter(&motor4, 0x7005, 5, Set_mode);
 			osDelay(2);
+			//Set_RobStrite_3Motor_simully_parameter(&motor1,&motor2,&motor3,0x7005,5,Set_mode);
 			Set_RobStrite_Motor_parameter(&motor1, 0x7005, 5, Set_mode);
 			Set_RobStrite_Motor_parameter(&motor2, 0x7005, 5, Set_mode);
 			Set_RobStrite_Motor_parameter(&motor3, 0x7005, 5, Set_mode);
@@ -227,12 +228,15 @@ void Buff_ReCf(void const * argument)
 			
 			Enable_Motor(&motor4);//
 			osDelay(1);
+			//Enable_Motor(&motor1);
 			Set_ZeroPos(&motor1);
-			osDelay(1);
+			//osDelay(1);
+			//Enable_Motor(&motor2);
 			Set_ZeroPos(&motor2);
-			osDelay(1);
+			//osDelay(1);
+			//Enable_Motor(&motor3);
 			Set_ZeroPos(&motor3);
-			osDelay(2);
+			//osDelay(2);
 			
 			DBUS_decode_val.pitch = 0;
 			pid_init();
@@ -272,7 +276,7 @@ void Buff_ReCf(void const * argument)
 			//chassis_can_cmd(DBUS_decode_val.sw[0],DBUS_decode_val.sw[1],DBUS_decode_val.control_mode);
 			if(DBUS_decode_val.control_mode != 0 && DBUS_decode_val.sw[1] == 1)
 			{
-				osDelay(50);
+				osDelay(100);
 				if(DBUS_decode_val.sw[1] == 3)
 				{
 					HAL_TIM_Base_Start(&htim4);
@@ -319,7 +323,7 @@ void gimbal(void const * argument)
 			if(DBUS_decode_val.delay_tag == 1)
 			{  
 				motor1_angle = 0.25;
-				motor1_vec = /*1*/0.25;
+				motor1_vec = /*1*/0.5;
 				RobStrite_3Motor_simully_Pos_control(&motor1,&motor2,&motor3,motor1_vec,motor1_angle);
 				osDelay(25);
 				DBUS_decode_val.delay_tag =2;

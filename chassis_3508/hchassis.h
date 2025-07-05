@@ -56,4 +56,9 @@ double chassis_motor_3_pid(void);
 // 清除数值
 void val_clear(void);
 
+// 底盘电机停止模式PID控制函数 (target_val=0)
+double chassis_motor_1_pid_stop(void);
+double chassis_motor_2_pid_stop(void);
+double chassis_motor_3_pid_stop(void);
+
 #endif //

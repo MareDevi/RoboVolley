@@ -6,6 +6,7 @@
 #include "math.h"
 #include "can.h"
 #include "rob2.h"
+#include <stdbool.h>
 
 #define CAN_CHASSIS_ALL_ID 0x200
 #define CAN_3508_M1_ID 0x201
@@ -187,192 +188,122 @@ void pid_init()
 
 double yaw;
 
+// 通用PID计算函数
+static double calculate_pid(PID_typedef* pid, double target_val, double current_val, bool is_stop_mode)
+{
+    pid->his_error = pid->cur_error;
+    pid->cur_error = target_val - current_val;
+    pid->pout = KP * pid->cur_error;
+    pid->iout += KI * pid->cur_error;
+    pid->dout = KD * (pid->cur_error - pid->his_error);
+    
+    // 积分限幅
+    pid->iout = ((pid->iout > IOUT_MAX) ? IOUT_MAX : pid->iout);
+    pid->iout = ((pid->iout < -IOUT_MAX) ? -IOUT_MAX : pid->iout);
+    
+    // 积分清零条件
+    if (is_stop_mode) {
+        // 停止模式：当目标为0且电机速度很小时，清除积分项
+        if (target_val == 0 && fabs(current_val) < 5.0) {
+            pid->iout = 0;
+        }
+    } else {
+        // 正常模式：当目标和当前都为0时，清除积分项
+        if (target_val == 0 && current_val == 0 && pid->cur_error == 0) {
+            pid->iout = 0;
+        }
+    }
+    
+    // 输出死区（仅在停止模式下）
+    if (is_stop_mode && fabs(pid->cur_error) < 5.0) {
+        pid->out = 0;
+    } else {
+        pid->out = pid->pout + pid->iout + pid->dout;
+    }
+    
+    // 输出限幅
+    pid->out = ((pid->out > OUT_MAX) ? OUT_MAX : pid->out);
+    pid->out = ((pid->out < -OUT_MAX) ? -OUT_MAX : pid->out);
+    
+    return pid->out;
+}
+
+// 获取yaw角度并处理
+static double get_processed_yaw(void)
+{
+    double processed_yaw = -get_INS_angle_point()[0];
+    if (processed_yaw >= -0.1 && processed_yaw <= 0.1) {
+        processed_yaw = 0;
+    }
+    return processed_yaw;
+}
+
+// 计算yaw角度修正值
+static double calculate_yaw_correction(double vx, double vy, double vc)
+{
+    yaw = get_processed_yaw();
+    double vr = yaw * KR;
+    
+    // 当有侧向运动或旋转时，禁用yaw修正
+    if ((vx == 0 && vy == 0) || vy != 0 || vc != 0) {
+        vr = 0;
+    }
+    
+    return vr;
+}
+
 // 控制pid电机控制程序
 double chassis_motor_1_pid() // 电机1
 {
-	double vx = DBUS_decode_val.rocker[2] * KV;
-	double vy = DBUS_decode_val.rocker[3] * KV;
-	double vc = DBUS_decode_val.rocker[0] * KC;
-
-	yaw = - get_INS_angle_point()[0];
-	if(yaw >= -0.1 && yaw <= 0.1)yaw = 0;
-	double vr = yaw * KR;
-	if((vx == 0 && vy == 0) || vy != 0 || vc != 0)vr = 0;
-	
-	double target_val = (-vx + vc + vr) * SPEED_SCALE;
-	double current_val = motor_chassis[0].speed_rpm;
-
-	PID1.his_error = PID1.cur_error;
-	PID1.cur_error = target_val - current_val;
-	PID1.pout = KP * PID1.cur_error;
-	PID1.iout += KI * PID1.cur_error;
-	PID1.dout = KD * (PID1.cur_error - PID1.his_error);
-	PID1.iout = ((PID1.iout > IOUT_MAX) ? IOUT_MAX : PID1.iout);
-	PID1.iout = ((PID1.iout < -IOUT_MAX) ? -IOUT_MAX : PID1.iout);
-	if (target_val == 0 && current_val == 0 && PID1.cur_error == 0)
-	{
-		PID1.iout = 0;
-	}
-	PID1.out = PID1.pout + PID1.iout + PID1.dout;
-	PID1.out = ((PID1.out > OUT_MAX) ? OUT_MAX : PID1.out);
-	PID1.out = ((PID1.out < -OUT_MAX) ? -OUT_MAX : PID1.out);
-
-	return PID1.out;
+    double vx = DBUS_decode_val.rocker[2] * KV;
+    double vy = DBUS_decode_val.rocker[3] * KV;
+    double vc = DBUS_decode_val.rocker[0] * KC;
+    
+    double vr = calculate_yaw_correction(vx, vy, vc);
+    double target_val = (-vx + vc + vr) * SPEED_SCALE;
+    double current_val = motor_chassis[0].speed_rpm;
+    
+    return calculate_pid(&PID1, target_val, current_val, false);
 }
 
 double chassis_motor_2_pid() // 电机2
 {
-	double vx = DBUS_decode_val.rocker[2];
-	double vy = DBUS_decode_val.rocker[3] * KV;
-	double vc = DBUS_decode_val.rocker[0] * KC;
-	
-	//yaw = - get_INS_angle_point()[0];
-	//if(yaw >= -0.1 && yaw <= 0.1)yaw = 0;
-	//double vr = yaw * KR;
-	//if((vx == 0 && vy == 0) || vc!= 0)vr = 0;
-
-	double target_val = (vx + vy + vc) * SPEED_SCALE;
-	double current_val = motor_chassis[1].speed_rpm;
-
-	PID2.his_error = PID2.cur_error;
-	PID2.cur_error = target_val - current_val;
-	PID2.pout = KP * PID2.cur_error;
-	PID2.iout += KI * PID2.cur_error;
-	PID2.dout = KD * (PID2.cur_error - PID2.his_error);
-	PID2.iout = ((PID2.iout > IOUT_MAX) ? IOUT_MAX : PID2.iout);
-	PID2.iout = ((PID2.iout < -IOUT_MAX) ? -IOUT_MAX : PID2.iout);
-	if (target_val == 0 && current_val == 0 && PID2.cur_error == 0)
-	{
-		PID2.iout = 0;
-	}
-	PID2.out = PID2.pout + PID2.iout + PID2.dout;
-	PID2.out = ((PID2.out > OUT_MAX) ? OUT_MAX : PID2.out);
-	PID2.out = ((PID2.out < -OUT_MAX) ? -OUT_MAX : PID2.out);
-	return PID2.out;
+    double vx = DBUS_decode_val.rocker[2];
+    double vy = DBUS_decode_val.rocker[3] * KV;
+    double vc = DBUS_decode_val.rocker[0] * KC;
+    
+    // 电机2不使用yaw修正
+    double target_val = (vx + vy + vc) * SPEED_SCALE;
+    double current_val = motor_chassis[1].speed_rpm;
+    
+    return calculate_pid(&PID2, target_val, current_val, false);
 }
 
 double chassis_motor_3_pid() // 电机3
 {
-	double vx = DBUS_decode_val.rocker[2]; // 修正：添加KV系数
-	double vy = DBUS_decode_val.rocker[3] * KV;
-	double vc = DBUS_decode_val.rocker[0] * KC;
-
-	//yaw = - get_INS_angle_point()[0];
-	//if(yaw >= -0.1 && yaw <= 0.1)yaw = 0;
-	//double vr = yaw * KR;
-	//if((vx == 0 && vy == 0) || vc != 0)vr = 0;
-
-	// 三轮布局运动学：电机3在右上，240度角
-	double target_val = (vx - vy + vc) * SPEED_SCALE;
-	double current_val = motor_chassis[2].speed_rpm;
-
-	PID3.his_error = PID3.cur_error;
-	PID3.cur_error = target_val - current_val;
-	PID3.pout = KP * PID3.cur_error;
-	PID3.iout += KI * PID3.cur_error;
-	PID3.dout = KD * (PID3.cur_error - PID3.his_error);
-	PID3.iout = ((PID3.iout > IOUT_MAX) ? IOUT_MAX : PID3.iout);
-	PID3.iout = ((PID3.iout < -IOUT_MAX) ? -IOUT_MAX : PID3.iout);
-	if (target_val == 0 && current_val == 0 && PID3.cur_error == 0)
-	{
-		PID3.iout = 0;
-	}
-	PID3.out = PID3.pout + PID3.iout + PID3.dout;
-	PID3.out = ((PID3.out > OUT_MAX) ? OUT_MAX : PID3.out);
-	PID3.out = ((PID3.out < -OUT_MAX) ? -OUT_MAX : PID3.out);
-	return PID3.out;
+    double vx = DBUS_decode_val.rocker[2];
+    double vy = DBUS_decode_val.rocker[3] * KV;
+    double vc = DBUS_decode_val.rocker[0] * KC;
+    
+    // 电机3不使用yaw修正，三轮布局运动学：电机3在右上，240度角
+    double target_val = (vx - vy + vc) * SPEED_SCALE;
+    double current_val = motor_chassis[2].speed_rpm;
+    
+    return calculate_pid(&PID3, target_val, current_val, false);
 }
 
-// 停止模式的PID控制函数 - target_val=0
+// 停止模式的PID控制函数 - target_val=0但保持PID状态
 double chassis_motor_1_pid_stop() // 电机1停止模式
 {
-	double target_val = 0.0F;  // 目标值设为0
-	double current_val = motor_chassis[0].speed_rpm;
-
-	PID1.his_error = PID1.cur_error;
-	PID1.cur_error = target_val - current_val;
-	PID1.pout = KP * PID1.cur_error;
-	PID1.iout += KI * PID1.cur_error;
-	PID1.dout = KD * (PID1.cur_error - PID1.his_error);
-	PID1.iout = ((PID1.iout > IOUT_MAX) ? IOUT_MAX : PID1.iout);
-	PID1.iout = ((PID1.iout < -IOUT_MAX) ? -IOUT_MAX : PID1.iout);
-	
-	// 当目标为0且电机速度很小时，清除积分项
-	if (target_val == 0 && fabs(current_val) < 5.0)
-	{
-		PID1.iout = 0;
-	}
-	
-	// 添加输出死区，减少小幅振荡
-	if(fabs(PID1.cur_error) < 10.0) {
-		PID1.out = 0;
-	} else {
-		PID1.out = PID1.pout + PID1.iout + PID1.dout;
-	}
-	PID1.out = ((PID1.out > OUT_MAX) ? OUT_MAX : PID1.out);
-	PID1.out = ((PID1.out < -OUT_MAX) ? -OUT_MAX : PID1.out);
-
-	return PID1.out;
+    return calculate_pid(&PID1, 0.0F, motor_chassis[0].speed_rpm, true);
 }
 
 double chassis_motor_2_pid_stop() // 电机2停止模式
 {
-	double target_val = 0.0F;  // 目标值设为0
-	double current_val = motor_chassis[1].speed_rpm;
-
-	PID2.his_error = PID2.cur_error;
-	PID2.cur_error = target_val - current_val;
-	PID2.pout = KP * PID2.cur_error;
-	PID2.iout += KI * PID2.cur_error;
-	PID2.dout = KD * (PID2.cur_error - PID2.his_error);
-	PID2.iout = ((PID2.iout > IOUT_MAX) ? IOUT_MAX : PID2.iout);
-	PID2.iout = ((PID2.iout < -IOUT_MAX) ? -IOUT_MAX : PID2.iout);
-	
-	// 当目标为0且电机速度很小时，清除积分项
-	if (target_val == 0 && fabs(current_val) < 5.0)
-	{
-		PID2.iout = 0;
-	}
-	
-	// 添加输出死区，减少小幅振荡
-	if(fabs(PID2.cur_error) < 10.0) {
-		PID2.out = 0;
-	} else {
-		PID2.out = PID2.pout + PID2.iout + PID2.dout;
-	}
-	PID2.out = ((PID2.out > OUT_MAX) ? OUT_MAX : PID2.out);
-	PID2.out = ((PID2.out < -OUT_MAX) ? -OUT_MAX : PID2.out);
-	
-	return PID2.out;
+    return calculate_pid(&PID2, 0.0F, motor_chassis[1].speed_rpm, true);
 }
 
 double chassis_motor_3_pid_stop() // 电机3停止模式
 {
-	double target_val = 0.0F;  // 目标值设为0
-	double current_val = motor_chassis[2].speed_rpm;
-
-	PID3.his_error = PID3.cur_error;
-	PID3.cur_error = target_val - current_val;
-	PID3.pout = KP * PID3.cur_error;
-	PID3.iout += KI * PID3.cur_error;
-	PID3.dout = KD * (PID3.cur_error - PID3.his_error);
-	PID3.iout = ((PID3.iout > IOUT_MAX) ? IOUT_MAX : PID3.iout);
-	PID3.iout = ((PID3.iout < -IOUT_MAX) ? -IOUT_MAX : PID3.iout);
-	
-	// 当目标为0且电机速度很小时，清除积分项
-	if (target_val == 0 && fabs(current_val) < 5.0)
-	{
-		PID3.iout = 0;
-	}
-	
-	// 添加输出死区，减少小幅振荡
-	if(fabs(PID3.cur_error) < 10.0) {
-		PID3.out = 0;
-	} else {
-		PID3.out = PID3.pout + PID3.iout + PID3.dout;
-	}
-	PID3.out = ((PID3.out > OUT_MAX) ? OUT_MAX : PID3.out);
-	PID3.out = ((PID3.out < -OUT_MAX) ? -OUT_MAX : PID3.out);
-	
-	return PID3.out;
+    return calculate_pid(&PID3, 0.0F, motor_chassis[2].speed_rpm, true);
 }

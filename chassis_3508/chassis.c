@@ -5,12 +5,16 @@
 #include "INS_task.h"
 #include "math.h"
 #include "can.h"
+#include "rob2.h"
 
 #define CAN_CHASSIS_ALL_ID 0x200
 #define CAN_3508_M1_ID 0x201
 #define CAN_3508_M2_ID 0x202
 #define CAN_3508_M3_ID 0x203
+#define SPEED_SCALE 6.0F
 #define KV 2.0F
+#define KC 1.0F
+#define KR 4.0F
 
 // PID信息
 PID_typedef PID1;
@@ -81,24 +85,32 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	uint8_t rx_data[8];
 
 	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, rx_data);
-
-	switch (rx_header.StdId)
-	{
-	case CAN_3508_M1_ID:
-	case CAN_3508_M2_ID:
-	case CAN_3508_M3_ID:
-	{
-		static uint8_t i = 0;
-		// get motor id
-		i = rx_header.StdId - CAN_3508_M1_ID;
-		get_motor_measure(&motor_chassis[i], rx_data);
-		break;
+	if(rx_header.IDE == CAN_ID_STD && hcan == &hcan1)
+	{	
+		switch (rx_header.StdId)
+		{
+			case CAN_3508_M1_ID:
+			case CAN_3508_M2_ID:
+			case CAN_3508_M3_ID:
+			{
+				static uint8_t i = 0;
+				// get motor id
+				i = rx_header.StdId - CAN_3508_M1_ID;
+				get_motor_measure(&motor_chassis[i], rx_data);
+				break;
+			}
+			default:
+			{
+				break;
+			}
+		}
 	}
-	default:
-	{
-		break;
-	}
-	}
+//	else if(rx_header.IDE == CAN_ID_EXT && hcan == &hcan2)
+//	{
+//		RobStrite_Motor_Analysis(&motor1,rx_data,rx_header.ExtId);
+//		RobStrite_Motor_Analysis(&motor2,rx_data,rx_header.ExtId);
+//		RobStrite_Motor_Analysis(&motor2,rx_data,rx_header.ExtId);
+//	}
 }
 
 // 关闭电机断电
@@ -180,18 +192,14 @@ double chassis_motor_1_pid() // 电机1
 {
 	double vx = DBUS_decode_val.rocker[2] * KV;
 	double vy = DBUS_decode_val.rocker[3] * KV;
-	double vc = DBUS_decode_val.rocker[0] * KV;
+	double vc = DBUS_decode_val.rocker[0] * KC;
 
 	yaw = - get_INS_angle_point()[0];
-	if(yaw >= -0.01 && yaw <= 0.01)yaw = 0;
-	double sin_yaw = sin(yaw);
-	double cos_yaw = cos(yaw);
-	double vx_set = cos_yaw * vx - sin_yaw * vy;
-	double vy_set = sin_yaw * vx + cos_yaw * vy;
-	vx = vx_set;
-	vy = vy_set;
-
-	double target_val = (-vx + vc) * 6.0F;
+	if(yaw >= -0.1 && yaw <= 0.1)yaw = 0;
+	double vr = yaw * KR;
+	if(vx == 0 && vy == 0)vr = 0;
+	
+	double target_val = (-vx + vc + vr) * SPEED_SCALE;
 	double current_val = motor_chassis[0].speed_rpm;
 
 	PID1.his_error = PID1.cur_error;
@@ -216,18 +224,14 @@ double chassis_motor_2_pid() // 电机2
 {
 	double vx = DBUS_decode_val.rocker[2];
 	double vy = DBUS_decode_val.rocker[3] * KV;
-	double vc = DBUS_decode_val.rocker[0] * KV;
+	double vc = DBUS_decode_val.rocker[0] * KC;
 	
 	yaw = - get_INS_angle_point()[0];
-	if(yaw >= -0.01 && yaw <= 0.01)yaw = 0;
-	double sin_yaw = sin(yaw);
-	double cos_yaw = cos(yaw);
-	double vx_set = cos_yaw * vx - sin_yaw * vy;
-	double vy_set = sin_yaw * vx + cos_yaw * vy;
-	vx = vx_set;
-	vy = vy_set;
+	if(yaw >= -0.1 && yaw <= 0.1)yaw = 0;
+	double vr = yaw * KR;
+	if(vx == 0 && vy == 0)vr = 0;
 
-	double target_val = (vx + vy + vc) * 6.0F;
+	double target_val = (vx + vy + vc + vr) * SPEED_SCALE;
 	double current_val = motor_chassis[1].speed_rpm;
 
 	PID2.his_error = PID2.cur_error;
@@ -251,19 +255,15 @@ double chassis_motor_3_pid() // 电机3
 {
 	double vx = DBUS_decode_val.rocker[2]; // 修正：添加KV系数
 	double vy = DBUS_decode_val.rocker[3] * KV;
-	double vc = DBUS_decode_val.rocker[0] * KV;
+	double vc = DBUS_decode_val.rocker[0] * KC;
 
 	yaw = - get_INS_angle_point()[0];
-	if(yaw >= -0.01 && yaw <= 0.01)yaw = 0;
-	double sin_yaw = sin(yaw);
-	double cos_yaw = cos(yaw);
-	double vx_set = cos_yaw * vx - sin_yaw * vy;
-	double vy_set = sin_yaw * vx + cos_yaw * vy;
-	vx = vx_set;
-	vy = vy_set;
+	if(yaw >= -0.1 && yaw <= 0.1)yaw = 0;
+	double vr = yaw * KR;
+	if(vx == 0 && vy == 0)vr = 0;
 
 	// 三轮布局运动学：电机3在右上，240度角
-	double target_val = (vx - vy + vc) * 6.0F;
+	double target_val = (vx - vy + vc + vr) * SPEED_SCALE;
 	double current_val = motor_chassis[2].speed_rpm;
 
 	PID3.his_error = PID3.cur_error;

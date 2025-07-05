@@ -12,9 +12,7 @@
 #define CAN_3508_M1_ID 0x201
 #define CAN_3508_M2_ID 0x202
 #define CAN_3508_M3_ID 0x203
-#define SPEED_SCALE 6.0F
-#define KV 2.0F
-#define KC 0.8F
+#define SPEED_SCALE 7.8F
 #define KR 290.0F
 
 // PID信息
@@ -232,7 +230,7 @@ static double calculate_pid(PID_typedef* pid, double target_val, double current_
 static double get_processed_yaw(void)
 {
     double processed_yaw = -get_INS_angle_point()[0];
-    if (processed_yaw >= -0.1 && processed_yaw <= 0.1) {
+    if (processed_yaw >= -0.1f && processed_yaw <= 0.1f) {
         processed_yaw = 0;
     }
     return processed_yaw;
@@ -244,7 +242,7 @@ static double calculate_yaw_correction(double vx, double vy, double vc)
     yaw = get_processed_yaw();
     double vr = yaw * KR;
     
-    // 当有侧向运动或旋转时，禁用yaw修正
+    // 当有前向运动或旋转时，禁用yaw修正
     if ((vx == 0 && vy == 0) || vy != 0 || vc != 0) {
         vr = 0;
     }
@@ -252,42 +250,46 @@ static double calculate_yaw_correction(double vx, double vy, double vc)
     return vr;
 }
 
+double v1,v2,v3;
+
 // 控制pid电机控制程序
 double chassis_motor_1_pid() // 电机1
 {
-    double vx = DBUS_decode_val.rocker[2] * KV;
-    double vy = DBUS_decode_val.rocker[3] * KV;
-    double vc = DBUS_decode_val.rocker[0] * KC;
+    double vx = DBUS_decode_val.rocker[2] * 0.667;
+    double vz = DBUS_decode_val.rocker[0] * 0.333;
     
-    double vr = calculate_yaw_correction(vx, vy, vc);
-    double target_val = (-vx + vc + vr) * SPEED_SCALE;
+    //double vr = calculate_yaw_correction(vx, vy, vc);
+    double target_val = (-vx + vz) * SPEED_SCALE;
     double current_val = motor_chassis[0].speed_rpm;
+		v1 = target_val;
     
     return calculate_pid(&PID1, target_val, current_val, false);
 }
 
 double chassis_motor_2_pid() // 电机2
 {
-    double vx = DBUS_decode_val.rocker[2];
-    double vy = DBUS_decode_val.rocker[3] * KV;
-    double vc = DBUS_decode_val.rocker[0] * KC;
+    double vx = DBUS_decode_val.rocker[2] * 0.333;
+    double vy = DBUS_decode_val.rocker[3] * 0.577;
+    double vz = DBUS_decode_val.rocker[0] * 0.333;
     
     // 电机2不使用yaw修正
-    double target_val = (vx + vy + vc) * SPEED_SCALE;
+    double target_val = (vx + vy + vz) * SPEED_SCALE;
     double current_val = motor_chassis[1].speed_rpm;
+		v2 = target_val;
     
     return calculate_pid(&PID2, target_val, current_val, false);
 }
 
 double chassis_motor_3_pid() // 电机3
 {
-    double vx = DBUS_decode_val.rocker[2];
-    double vy = DBUS_decode_val.rocker[3] * KV;
-    double vc = DBUS_decode_val.rocker[0] * KC;
+    double vx = DBUS_decode_val.rocker[2] * 0.333;
+    double vy = DBUS_decode_val.rocker[3] * 0.577;
+    double vz = DBUS_decode_val.rocker[0] * 0.333;
     
     // 电机3不使用yaw修正，三轮布局运动学：电机3在右上，240度角
-    double target_val = (vx - vy + vc) * SPEED_SCALE;
+    double target_val = (vx - vy + vz) * SPEED_SCALE;
     double current_val = motor_chassis[2].speed_rpm;
+		v3 = target_val;
     
     return calculate_pid(&PID3, target_val, current_val, false);
 }

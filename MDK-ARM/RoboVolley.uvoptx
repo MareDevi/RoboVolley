@@ -183,12 +183,17 @@
         <Ww>
           <count>5</count>
           <WinNumber>1</WinNumber>
-          <ItemText>vroll</ItemText>
+          <ItemText>v1</ItemText>
         </Ww>
         <Ww>
           <count>6</count>
           <WinNumber>1</WinNumber>
-          <ItemText>vcorrect</ItemText>
+          <ItemText>v2</ItemText>
+        </Ww>
+        <Ww>
+          <count>7</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>v3</ItemText>
         </Ww>
       </WatchWindow1>
       <Tracepoint>

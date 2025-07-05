@@ -69,17 +69,17 @@ osThreadId imuTaskHandle;
 
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void const *argument);
-void Buff_ReCf(void const *argument);
-void gimbal(void const *argument);
-void delay_for_platform(void const *argument);
-extern void chassis_task(void const *argument);
-extern void INS_task(void const *argument);
+void StartDefaultTask(void const * argument);
+void Buff_ReCf(void const * argument);
+void gimbal(void const * argument);
+void delay_for_platform(void const * argument);
+extern void chassis_task(void const * argument);
+extern void INS_task(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
-void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize);
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
 
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
@@ -95,59 +95,59 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackTyp
 /* USER CODE END GET_IDLE_TASK_MEMORY */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
-void MX_FREERTOS_Init(void)
-{
-	/* USER CODE BEGIN Init */
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
+void MX_FREERTOS_Init(void) {
+  /* USER CODE BEGIN Init */
 
-	/* USER CODE END Init */
+  /* USER CODE END Init */
 
-	/* USER CODE BEGIN RTOS_MUTEX */
+  /* USER CODE BEGIN RTOS_MUTEX */
 	/* add mutexes, ... */
-	/* USER CODE END RTOS_MUTEX */
+  /* USER CODE END RTOS_MUTEX */
 
-	/* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
-	/* USER CODE END RTOS_SEMAPHORES */
+  /* USER CODE END RTOS_SEMAPHORES */
 
-	/* USER CODE BEGIN RTOS_TIMERS */
+  /* USER CODE BEGIN RTOS_TIMERS */
 	/* start timers, add new ones, ... */
-	/* USER CODE END RTOS_TIMERS */
+  /* USER CODE END RTOS_TIMERS */
 
-	/* USER CODE BEGIN RTOS_QUEUES */
+  /* USER CODE BEGIN RTOS_QUEUES */
 	/* add queues, ... */
-	/* USER CODE END RTOS_QUEUES */
+  /* USER CODE END RTOS_QUEUES */
 
-	/* Create the thread(s) */
-	/* definition and creation of defaultTask */
-	osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
-	defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+  /* Create the thread(s) */
+  /* definition and creation of defaultTask */
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
-	/* definition and creation of Rcontrol */
-	osThreadDef(Rcontrol, Buff_ReCf, osPriorityHigh, 0, 128);
-	RcontrolHandle = osThreadCreate(osThread(Rcontrol), NULL);
+  /* definition and creation of Rcontrol */
+  osThreadDef(Rcontrol, Buff_ReCf, osPriorityHigh, 0, 128);
+  RcontrolHandle = osThreadCreate(osThread(Rcontrol), NULL);
 
-	/* definition and creation of gimbalTask */
-	osThreadDef(gimbalTask, gimbal, osPriorityIdle, 0, 128);
-	gimbalTaskHandle = osThreadCreate(osThread(gimbalTask), NULL);
+  /* definition and creation of gimbalTask */
+  osThreadDef(gimbalTask, gimbal, osPriorityIdle, 0, 128);
+  gimbalTaskHandle = osThreadCreate(osThread(gimbalTask), NULL);
 
-	/* definition and creation of delayTask */
-	osThreadDef(delayTask, delay_for_platform, osPriorityIdle, 0, 128);
-	delayTaskHandle = osThreadCreate(osThread(delayTask), NULL);
+  /* definition and creation of delayTask */
+  osThreadDef(delayTask, delay_for_platform, osPriorityIdle, 0, 128);
+  delayTaskHandle = osThreadCreate(osThread(delayTask), NULL);
 
-	/* definition and creation of chassisTask */
-	osThreadDef(chassisTask, chassis_task, osPriorityNormal, 0, 128);
-	chassisTaskHandle = osThreadCreate(osThread(chassisTask), NULL);
+  /* definition and creation of chassisTask */
+  osThreadDef(chassisTask, chassis_task, osPriorityNormal, 0, 128);
+  chassisTaskHandle = osThreadCreate(osThread(chassisTask), NULL);
 
-	/* definition and creation of imuTask */
-	osThreadDef(imuTask, INS_task, osPriorityRealtime, 0, 256);
-	imuTaskHandle = osThreadCreate(osThread(imuTask), NULL);
+  /* definition and creation of imuTask */
+  osThreadDef(imuTask, INS_task, osPriorityRealtime, 0, 256);
+  imuTaskHandle = osThreadCreate(osThread(imuTask), NULL);
 
-	/* USER CODE BEGIN RTOS_THREADS */
-	/* USER CODE END RTOS_THREADS */
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* USER CODE END RTOS_THREADS */
+
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -157,15 +157,15 @@ void MX_FREERTOS_Init(void)
  * @retval None
  */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const *argument)
+void StartDefaultTask(void const * argument)
 {
-	/* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN StartDefaultTask */
 	/* Infinite loop */
 	for (;;)
 	{
 		osDelay(1);
 	}
-	/* USER CODE END StartDefaultTask */
+  /* USER CODE END StartDefaultTask */
 }
 
 /* USER CODE BEGIN Header_Buff_ReCf */
@@ -175,9 +175,9 @@ void StartDefaultTask(void const *argument)
  * @retval None
  */
 /* USER CODE END Header_Buff_ReCf */
-void Buff_ReCf(void const *argument)
+void Buff_ReCf(void const * argument)
 {
-	/* USER CODE BEGIN Buff_ReCf */
+  /* USER CODE BEGIN Buff_ReCf */
 	/* Infinite loop */
 	DBUS_decode_val.isenable = 0;
 	HAL_UART_Receive_IT(&huart3, DBUS_buff, BUFF_LEN);
@@ -290,7 +290,7 @@ void Buff_ReCf(void const *argument)
 		}
 	}
 
-	/* USER CODE END Buff_ReCf */
+  /* USER CODE END Buff_ReCf */
 }
 
 /* USER CODE BEGIN Header_gimbal */
@@ -300,9 +300,9 @@ void Buff_ReCf(void const *argument)
  * @retval None
  */
 /* USER CODE END Header_gimbal */
-void gimbal(void const *argument)
+void gimbal(void const * argument)
 {
-	/* USER CODE BEGIN gimbal */
+  /* USER CODE BEGIN gimbal */
 	/* Infinite loop */
 	DBUS_decode_val.delay_tag = 0;
 	DBUS_decode_val.bounce_mode = 0;
@@ -365,7 +365,7 @@ void gimbal(void const *argument)
 			;
 		}
 	}
-	/* USER CODE END gimbal */
+  /* USER CODE END gimbal */
 }
 
 /* USER CODE BEGIN Header_delay_for_platform */
@@ -375,9 +375,9 @@ void gimbal(void const *argument)
  * @retval None
  */
 /* USER CODE END Header_delay_for_platform */
-void delay_for_platform(void const *argument)
+void delay_for_platform(void const * argument)
 {
-	/* USER CODE BEGIN delay_for_platform */
+  /* USER CODE BEGIN delay_for_platform */
 	/* Infinite loop */
 	while (1)
 	{
@@ -410,7 +410,7 @@ void delay_for_platform(void const *argument)
 		}
 		osDelay(3);
 	}
-	/* USER CODE END delay_for_platform */
+  /* USER CODE END delay_for_platform */
 }
 
 /* Private application code --------------------------------------------------*/

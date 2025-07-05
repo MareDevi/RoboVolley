@@ -12,22 +12,22 @@ void chassis_task(void const *argument)
     pid_init();
     can_filter_init();
 
-    for(;;)
+    for (;;)
     {
-			if(DBUS_decode_val.control_mode == 1)
-			{
-				
-        int16_t motor1_out = (int16_t)chassis_motor_1_pid();
-        int16_t motor2_out = (int16_t)chassis_motor_2_pid();
-        int16_t motor3_out = (int16_t)chassis_motor_3_pid();
+        if (DBUS_decode_val.control_mode == 1)
+        {
 
-        chassis_can_cmd(motor1_out, motor2_out, motor3_out);
-        HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);
-			}
-			else if(DBUS_decode_val.control_mode == 2)
-			{
-				;
-			}
+            int16_t motor1_out = (int16_t)chassis_motor_1_pid();
+            int16_t motor2_out = (int16_t)chassis_motor_2_pid();
+            int16_t motor3_out = (int16_t)chassis_motor_3_pid();
+
+            chassis_can_cmd(motor1_out, motor2_out, motor3_out);
+            HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);
+        }
+        else if (DBUS_decode_val.control_mode == 2)
+        {
+            chassis_can_cmd(0, 0, 0);
+        }
         osDelay(10);
     }
 }

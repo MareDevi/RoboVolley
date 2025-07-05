@@ -6,11 +6,11 @@
 #include "pid.h"
 
 
-#define KP 8.0F
-#define KI 0.005F
-#define KD 0.5F
-#define IOUT_MAX 800.0F
-#define OUT_MAX 2000.0F
+#define KP 15.0F
+#define KI 0.01F
+#define KD 0.01F
+#define IOUT_MAX 1200.0F
+#define OUT_MAX 3000.0F
 
 
 typedef struct 

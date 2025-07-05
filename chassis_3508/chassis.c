@@ -14,7 +14,7 @@
 #define SPEED_SCALE 6.0F
 #define KV 2.0F
 #define KC 0.8F
-#define KR 250.0F
+#define KR 290.0F
 
 // PID信息
 PID_typedef PID1;

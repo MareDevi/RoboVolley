@@ -24,6 +24,9 @@ typedef struct
 
 extern   motor_measure_t   motor_chassis[3];
 
+// 全局调试变量
+extern double v1, v2, v3, yaw;
+
 typedef struct 
 { 
   double kp;
@@ -39,7 +42,7 @@ typedef struct
 	double his_error;
 }                       PID_typedef;
 
-extern PID_typedef PID1, PID2, PID3;
+extern PID_typedef PID1, PID2, PID3, PID_yaw;
 
 // 初始化CAN滤波器
 void can_filter_init(void);
@@ -48,17 +51,22 @@ void pid_init(void);
 // 发送底盘电机控制指令
 void chassis_can_cmd(int16_t motor1, int16_t motor2, int16_t motor3);
 
-// 获取电机PID计算输出
-double chassis_motor_1_pid(void);
-double chassis_motor_2_pid(void);
-double chassis_motor_3_pid(void);
+// 底盘控制任务（包含航向锁定功能）
+void chassis_control_task(void);
+// 底盘停止控制
+void chassis_stop(void);
+// 关闭电机断电
+void shut_up(void);
 
 // 清除数值
 void val_clear(void);
 
-// 底盘电机停止模式PID控制函数 (target_val=0)
-double chassis_motor_1_pid_stop(void);
-double chassis_motor_2_pid_stop(void);
-double chassis_motor_3_pid_stop(void);
+// 已弃用的单独电机PID函数声明（已在chassis.c中注释掉）
+// double chassis_motor_1_pid(void);
+// double chassis_motor_2_pid(void);  
+// double chassis_motor_3_pid(void);
+// double chassis_motor_1_pid_stop(void);
+// double chassis_motor_2_pid_stop(void);
+// double chassis_motor_3_pid_stop(void);
 
 #endif //

@@ -32,6 +32,7 @@
 #include "hDBUS.h"
 #include "hchassis.h"
 #include "bsp_delay.h"
+#include "bsp_uart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -113,6 +114,7 @@ int main(void)
 	HAL_CAN_Start(&hcan1);
 	HAL_CAN_Start(&hcan2);
   delay_init();
+	uart_init();
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in cmsis_os2.c) */

@@ -27,14 +27,6 @@ void decode_buff(uint8_t *DBUS_buff, DECODE_VAL *DBUS_decode_val)
 		DBUS_decode_val->key = 1;
 }
 
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) //DMA
-{
-	if(huart == &huart3)
-	{
-		decode_buff(DBUS_buff,&DBUS_decode_val);
-		HAL_UARTEx_ReceiveToIdle_DMA(&huart3,DBUS_buff,Size);
-	}
-}
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)  //IT
 {
 

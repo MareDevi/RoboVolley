@@ -55,3 +55,17 @@ git add .
 git commit -m "这里是你的修改信息"
 git push #提交代码
 ```
+
+
+# Vscode打开Keil工程
+
+## 安装插件
+1.C/C++
+2.Keil uVision Assistant
+
+## 配置
+参考[这里](https://marketplace.visualstudio.com/items?itemName=jacksonjim.keil-vscode-assistant)的说明完成配置
+
+## 使用
+Vscode打开keil项目所在文件夹即可
+![](https://photos.maredevi.fun/i/2025/07/05/6868f9cda7355.png)

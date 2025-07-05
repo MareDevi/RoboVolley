@@ -291,3 +291,97 @@ double chassis_motor_3_pid() // 电机3
 	PID3.out = ((PID3.out < -OUT_MAX) ? -OUT_MAX : PID3.out);
 	return PID3.out;
 }
+
+// 停止模式的PID控制函数 - target_val=0
+double chassis_motor_1_pid_stop() // 电机1停止模式
+{
+	double target_val = 0.0F;  // 目标值设为0
+	double current_val = motor_chassis[0].speed_rpm;
+
+	PID1.his_error = PID1.cur_error;
+	PID1.cur_error = target_val - current_val;
+	PID1.pout = KP * PID1.cur_error;
+	PID1.iout += KI * PID1.cur_error;
+	PID1.dout = KD * (PID1.cur_error - PID1.his_error);
+	PID1.iout = ((PID1.iout > IOUT_MAX) ? IOUT_MAX : PID1.iout);
+	PID1.iout = ((PID1.iout < -IOUT_MAX) ? -IOUT_MAX : PID1.iout);
+	
+	// 当目标为0且电机速度很小时，清除积分项
+	if (target_val == 0 && fabs(current_val) < 5.0)
+	{
+		PID1.iout = 0;
+	}
+	
+	// 添加输出死区，减少小幅振荡
+	if(fabs(PID1.cur_error) < 10.0) {
+		PID1.out = 0;
+	} else {
+		PID1.out = PID1.pout + PID1.iout + PID1.dout;
+	}
+	PID1.out = ((PID1.out > OUT_MAX) ? OUT_MAX : PID1.out);
+	PID1.out = ((PID1.out < -OUT_MAX) ? -OUT_MAX : PID1.out);
+
+	return PID1.out;
+}
+
+double chassis_motor_2_pid_stop() // 电机2停止模式
+{
+	double target_val = 0.0F;  // 目标值设为0
+	double current_val = motor_chassis[1].speed_rpm;
+
+	PID2.his_error = PID2.cur_error;
+	PID2.cur_error = target_val - current_val;
+	PID2.pout = KP * PID2.cur_error;
+	PID2.iout += KI * PID2.cur_error;
+	PID2.dout = KD * (PID2.cur_error - PID2.his_error);
+	PID2.iout = ((PID2.iout > IOUT_MAX) ? IOUT_MAX : PID2.iout);
+	PID2.iout = ((PID2.iout < -IOUT_MAX) ? -IOUT_MAX : PID2.iout);
+	
+	// 当目标为0且电机速度很小时，清除积分项
+	if (target_val == 0 && fabs(current_val) < 5.0)
+	{
+		PID2.iout = 0;
+	}
+	
+	// 添加输出死区，减少小幅振荡
+	if(fabs(PID2.cur_error) < 10.0) {
+		PID2.out = 0;
+	} else {
+		PID2.out = PID2.pout + PID2.iout + PID2.dout;
+	}
+	PID2.out = ((PID2.out > OUT_MAX) ? OUT_MAX : PID2.out);
+	PID2.out = ((PID2.out < -OUT_MAX) ? -OUT_MAX : PID2.out);
+	
+	return PID2.out;
+}
+
+double chassis_motor_3_pid_stop() // 电机3停止模式
+{
+	double target_val = 0.0F;  // 目标值设为0
+	double current_val = motor_chassis[2].speed_rpm;
+
+	PID3.his_error = PID3.cur_error;
+	PID3.cur_error = target_val - current_val;
+	PID3.pout = KP * PID3.cur_error;
+	PID3.iout += KI * PID3.cur_error;
+	PID3.dout = KD * (PID3.cur_error - PID3.his_error);
+	PID3.iout = ((PID3.iout > IOUT_MAX) ? IOUT_MAX : PID3.iout);
+	PID3.iout = ((PID3.iout < -IOUT_MAX) ? -IOUT_MAX : PID3.iout);
+	
+	// 当目标为0且电机速度很小时，清除积分项
+	if (target_val == 0 && fabs(current_val) < 5.0)
+	{
+		PID3.iout = 0;
+	}
+	
+	// 添加输出死区，减少小幅振荡
+	if(fabs(PID3.cur_error) < 10.0) {
+		PID3.out = 0;
+	} else {
+		PID3.out = PID3.pout + PID3.iout + PID3.dout;
+	}
+	PID3.out = ((PID3.out > OUT_MAX) ? OUT_MAX : PID3.out);
+	PID3.out = ((PID3.out < -OUT_MAX) ? -OUT_MAX : PID3.out);
+	
+	return PID3.out;
+}

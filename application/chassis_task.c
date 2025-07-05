@@ -26,7 +26,12 @@ void chassis_task(void const *argument)
         }
         else if (DBUS_decode_val.control_mode == 2)
         {
-            chassis_can_cmd(0, 0, 0);
+            // 通过PID计算但设置target_val=0，保持控制器状态
+            int16_t motor1_out = (int16_t)chassis_motor_1_pid_stop();
+            int16_t motor2_out = (int16_t)chassis_motor_2_pid_stop();
+            int16_t motor3_out = (int16_t)chassis_motor_3_pid_stop();
+            
+            chassis_can_cmd(motor1_out, motor2_out, motor3_out);
         }
         osDelay(10);
     }

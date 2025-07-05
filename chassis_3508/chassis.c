@@ -166,6 +166,8 @@ void pid_init()
 	PID1.iout = 0;
 	PID1.dout = 0;
 	PID1.out = 0;
+	PID1.cur_error = 0;
+	PID1.his_error = 0;
 
 	// 初始化PID2
 	PID2.kp = KP;
@@ -177,6 +179,8 @@ void pid_init()
 	PID2.iout = 0;
 	PID2.dout = 0;
 	PID2.out = 0;
+	PID2.cur_error = 0;
+	PID2.his_error = 0;
 
 	// 初始化PID3
 	PID3.kp = KP;
@@ -188,17 +192,21 @@ void pid_init()
 	PID3.iout = 0;
 	PID3.dout = 0;
 	PID3.out = 0;
+	PID3.cur_error = 0;
+	PID3.his_error = 0;
 
-	    // 初始化Yaw轴PID
-    PID_yaw.kp = 290.0f; // <-- 使用您定义的KR作为初始Kp值，后续需要精调
-    PID_yaw.ki = 0.0f;   // <-- Ki先设为0，防止积分饱和问题
-    PID_yaw.kd = 0.0f;   // <-- Kd先设为0，先从简单的P控制开始
-    PID_yaw.out_max = 1000; // <-- 限制最大修正角速度，防止抖动，此值需要调试
-    PID_yaw.iout_max = 500;
-    PID_yaw.pout = 0;
-    PID_yaw.iout = 0;
-    PID_yaw.dout = 0;
-    PID_yaw.out = 0;
+	// 初始化Yaw轴PID
+	PID_yaw.kp = 50.0f;   // 降低Kp值，避免过度修正（原290.0f太大）
+	PID_yaw.ki = 0.0f;    // Ki先设为0，防止积分饱和问题
+	PID_yaw.kd = 5.0f;    // 添加小的微分项，提高稳定性
+	PID_yaw.out_max = 100; // 进一步限制最大修正角速度（原1000太大）
+	PID_yaw.iout_max = 50; // 降低积分限制（原500太大）
+	PID_yaw.pout = 0;
+	PID_yaw.iout = 0;
+	PID_yaw.dout = 0;
+	PID_yaw.out = 0;
+	PID_yaw.cur_error = 0;
+	PID_yaw.his_error = 0;
 }
 
 double yaw;
@@ -208,13 +216,15 @@ static double calculate_pid(PID_typedef* pid, double target_val, double current_
 {
     pid->his_error = pid->cur_error;
     pid->cur_error = target_val - current_val;
-    pid->pout = KP * pid->cur_error;
-    pid->iout += KI * pid->cur_error;
-    pid->dout = KD * (pid->cur_error - pid->his_error);
     
-    // 积分限幅
-    pid->iout = ((pid->iout > IOUT_MAX) ? IOUT_MAX : pid->iout);
-    pid->iout = ((pid->iout < -IOUT_MAX) ? -IOUT_MAX : pid->iout);
+    // 使用结构体中的PID参数，而不是全局常量
+    pid->pout = pid->kp * pid->cur_error;
+    pid->iout += pid->ki * pid->cur_error;
+    pid->dout = pid->kd * (pid->cur_error - pid->his_error);
+    
+    // 积分限幅 - 使用结构体中的限制值
+    pid->iout = ((pid->iout > pid->iout_max) ? pid->iout_max : pid->iout);
+    pid->iout = ((pid->iout < -pid->iout_max) ? -pid->iout_max : pid->iout);
     
     // 积分清零条件
     if (is_stop_mode) {
@@ -236,96 +246,14 @@ static double calculate_pid(PID_typedef* pid, double target_val, double current_
         pid->out = pid->pout + pid->iout + pid->dout;
     }
     
-    // 输出限幅
-    pid->out = ((pid->out > OUT_MAX) ? OUT_MAX : pid->out);
-    pid->out = ((pid->out < -OUT_MAX) ? -OUT_MAX : pid->out);
+    // 输出限幅 - 使用结构体中的限制值
+    pid->out = ((pid->out > pid->out_max) ? pid->out_max : pid->out);
+    pid->out = ((pid->out < -pid->out_max) ? -pid->out_max : pid->out);
     
     return pid->out;
 }
 
-// // 获取yaw角度并处理
-// static double get_processed_yaw(void)
-// {
-//     double processed_yaw = -get_INS_angle_point()[0];
-//     if (processed_yaw >= -0.1f && processed_yaw <= 0.1f) {
-//         processed_yaw = 0;
-//     }
-//     return processed_yaw;
-// }
-
-// // 计算yaw角度修正值
-// static double calculate_yaw_correction(double vx, double vy, double vc)
-// {
-//     yaw = get_processed_yaw();
-//     double vr = yaw * KR;
-    
-//     // 当有前向运动或旋转时，禁用yaw修正
-//     if ((vx == 0 && vy == 0) || vy != 0 || vc != 0) {
-//         vr = 0;
-//     }
-    
-//     return vr;
-// }
-
-double v1,v2,v3;
-
-// // 控制pid电机控制程序
-// double chassis_motor_1_pid() // 电机1
-// {
-//     double vx = DBUS_decode_val.rocker[2] * 0.667;
-//     double vz = DBUS_decode_val.rocker[0] * 0.333;
-    
-//     //double vr = calculate_yaw_correction(vx, vy, vc);
-//     double target_val = (-vx + vz) * SPEED_SCALE;
-//     double current_val = motor_chassis[0].speed_rpm;
-// 		v1 = target_val;
-    
-//     return calculate_pid(&PID1, target_val, current_val, false);
-// }
-
-// double chassis_motor_2_pid() // 电机2
-// {
-//     double vx = DBUS_decode_val.rocker[2] * 0.333;
-//     double vy = DBUS_decode_val.rocker[3] * 0.577;
-//     double vz = DBUS_decode_val.rocker[0] * 0.333;
-    
-//     // 电机2不使用yaw修正
-//     double target_val = (vx + vy + vz) * SPEED_SCALE;
-//     double current_val = motor_chassis[1].speed_rpm;
-// 		v2 = target_val;
-    
-//     return calculate_pid(&PID2, target_val, current_val, false);
-// }
-
-// double chassis_motor_3_pid() // 电机3
-// {
-//     double vx = DBUS_decode_val.rocker[2] * 0.333;
-//     double vy = DBUS_decode_val.rocker[3] * 0.577;
-//     double vz = DBUS_decode_val.rocker[0] * 0.333;
-    
-//     // 电机3不使用yaw修正，三轮布局运动学：电机3在右上，240度角
-//     double target_val = (vx - vy + vz) * SPEED_SCALE;
-//     double current_val = motor_chassis[2].speed_rpm;
-// 		v3 = target_val;
-    
-//     return calculate_pid(&PID3, target_val, current_val, false);
-// }
-
-// // 停止模式的PID控制函数 - target_val=0但保持PID状态
-// double chassis_motor_1_pid_stop() // 电机1停止模式
-// {
-//     return calculate_pid(&PID1, 0.0F, motor_chassis[0].speed_rpm, true);
-// }
-
-// double chassis_motor_2_pid_stop() // 电机2停止模式
-// {
-//     return calculate_pid(&PID2, 0.0F, motor_chassis[1].speed_rpm, true);
-// }
-
-// double chassis_motor_3_pid_stop() // 电机3停止模式
-// {
-//     return calculate_pid(&PID3, 0.0F, motor_chassis[2].speed_rpm, true);
-// }
+double v1,v2,v3;  //调试用
 
 /**
  * @brief 底盘主控制任务，包含航向锁定
@@ -353,14 +281,32 @@ void chassis_control_task(void)
             heading_lock_first_time = false;
         }
 
-        // 使用通用PID计算函数来计算修正速度
-        // 注意：这里的PID输入是角度，输出是角速度
-        yaw_correction_speed = calculate_pid(&PID_yaw, target_yaw, current_yaw, false);
+        // 计算角度误差
+        double yaw_error = target_yaw - current_yaw;
+        
+        // 添加角度死区，避免在静止时持续修正微小误差
+        if (fabs(yaw_error) > 0.05) // 角度死区：约3度（假设单位是弧度）
+        {
+            // 使用通用PID计算函数来计算修正速度
+            yaw_correction_speed = calculate_pid(&PID_yaw, target_yaw, current_yaw, false);
+            
+            // 限制修正速度的幅度，避免过大的修正
+            if (yaw_correction_speed > 50) yaw_correction_speed = 50;
+            if (yaw_correction_speed < -50) yaw_correction_speed = -50;
+        }
+        else
+        {
+            // 在死区内，不进行修正，并清除PID积分项
+            yaw_correction_speed = 0.0;
+            PID_yaw.iout = 0; // 清除积分项，防止累积
+        }
     }
     else
     {
         // 如果用户正在主动旋转，则重置锁定状态，不进行修正
         heading_lock_first_time = true;
+        yaw_correction_speed = 0.0;
+        PID_yaw.iout = 0; // 清除积分项
     }
 
     // 3. 叠加角速度
@@ -385,6 +331,7 @@ void chassis_control_task(void)
     double motor_out3 = calculate_pid(&PID3, v_target3, motor_chassis[2].speed_rpm, false);
 
     chassis_can_cmd(motor_out1, motor_out2, motor_out3);
+	HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);
 }
 
 /**
@@ -393,14 +340,14 @@ void chassis_control_task(void)
  */
 void chassis_stop(void)
 {
-    // 调用各电机的停止模式PID
-    double motor_out1 = chassis_motor_1_pid_stop();
-    double motor_out2 = chassis_motor_2_pid_stop();
-    double motor_out3 = chassis_motor_3_pid_stop();
+    // 使用通用PID函数进行停止模式控制
+    double motor_out1 = calculate_pid(&PID1, 0.0, motor_chassis[0].speed_rpm, true);
+    double motor_out2 = calculate_pid(&PID2, 0.0, motor_chassis[1].speed_rpm, true);
+    double motor_out3 = calculate_pid(&PID3, 0.0, motor_chassis[2].speed_rpm, true);
     
     // 发送CAN指令
     chassis_can_cmd(motor_out1, motor_out2, motor_out3);
-    
+    HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);
     // 重置航向锁定状态
     heading_lock_first_time = true;
 }

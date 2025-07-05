@@ -220,9 +220,9 @@ void Buff_ReCf(void const * argument)
 			
 			Set_RobStrite_Motor_parameter(&motor4, 0x7005, 5, Set_mode);
 			osDelay(2);
-			Set_RobStrite_Motor_parameter(&motor1, 0x7005, 3, Set_mode);
-			Set_RobStrite_Motor_parameter(&motor2, 0x7005, 3, Set_mode);
-			Set_RobStrite_Motor_parameter(&motor3, 0x7005, 3, Set_mode);
+			Set_RobStrite_Motor_parameter(&motor1, 0x7005, 5, Set_mode);
+			Set_RobStrite_Motor_parameter(&motor2, 0x7005, 5, Set_mode);
+			Set_RobStrite_Motor_parameter(&motor3, 0x7005, 5, Set_mode);
 			osDelay(2);
 			
 			Enable_Motor(&motor4);//
@@ -245,10 +245,10 @@ void Buff_ReCf(void const * argument)
 			osDelay(2);
 			
 			
-			Set_RobStrite_Motor_parameter(&motor1, 0x7005, 3, Set_mode);
-			Set_RobStrite_Motor_parameter(&motor2, 0x7005, 3, Set_mode);
-			Set_RobStrite_Motor_parameter(&motor3, 0x7005, 3, Set_mode);
-			osDelay(2);
+			// Set_RobStrite_Motor_parameter(&motor1, 0x7005, 3, Set_mode);
+			// Set_RobStrite_Motor_parameter(&motor2, 0x7005, 3, Set_mode);
+			// Set_RobStrite_Motor_parameter(&motor3, 0x7005, 3, Set_mode);
+			// osDelay(2);
 			
 			DBUS_decode_val.isenable = 1;
 		}

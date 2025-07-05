@@ -182,8 +182,10 @@ double chassis_motor_1_pid() // 电机1
 	double vy = DBUS_decode_val.rocker[3] * KV;
 	double vc = DBUS_decode_val.rocker[0] * KV;
 
-	yaw = - get_INS_angle_point()[0];
-	if(yaw >= -0.01 && yaw <= 0.01)yaw = 0;
+	yaw = -get_INS_angle_point()[0];
+	yaw = round(yaw * 100.0) / 100.0; // 四舍五入保留两位小数，减少噪声
+	if (yaw >= -0.05 && yaw <= 0.05)
+		yaw = 0; // 增大死区，减少抖动
 	double sin_yaw = sin(yaw);
 	double cos_yaw = cos(yaw);
 	double vx_set = cos_yaw * vx - sin_yaw * vy;
@@ -205,7 +207,15 @@ double chassis_motor_1_pid() // 电机1
 	{
 		PID1.iout = 0;
 	}
-	PID1.out = PID1.pout + PID1.iout + PID1.dout;
+	// 添加输出死区，减少小幅振荡
+	if (fabs(PID1.cur_error) < 10.0)
+	{
+		PID1.out = 0;
+	}
+	else
+	{
+		PID1.out = PID1.pout + PID1.iout + PID1.dout;
+	}
 	PID1.out = ((PID1.out > OUT_MAX) ? OUT_MAX : PID1.out);
 	PID1.out = ((PID1.out < -OUT_MAX) ? -OUT_MAX : PID1.out);
 
@@ -217,9 +227,11 @@ double chassis_motor_2_pid() // 电机2
 	double vx = DBUS_decode_val.rocker[2];
 	double vy = DBUS_decode_val.rocker[3] * KV;
 	double vc = DBUS_decode_val.rocker[0] * KV;
-	
-	yaw = - get_INS_angle_point()[0];
-	if(yaw >= -0.01 && yaw <= 0.01)yaw = 0;
+
+	yaw = -get_INS_angle_point()[0];
+	yaw = round(yaw * 100.0) / 100.0; // 四舍五入保留两位小数，减少噪声
+	if (yaw >= -0.05 && yaw <= 0.05)
+		yaw = 0; // 增大死区，减少抖动
 	double sin_yaw = sin(yaw);
 	double cos_yaw = cos(yaw);
 	double vx_set = cos_yaw * vx - sin_yaw * vy;
@@ -241,7 +253,15 @@ double chassis_motor_2_pid() // 电机2
 	{
 		PID2.iout = 0;
 	}
-	PID2.out = PID2.pout + PID2.iout + PID2.dout;
+	// 添加输出死区，减少小幅振荡
+	if (fabs(PID2.cur_error) < 10.0)
+	{
+		PID2.out = 0;
+	}
+	else
+	{
+		PID2.out = PID2.pout + PID2.iout + PID2.dout;
+	}
 	PID2.out = ((PID2.out > OUT_MAX) ? OUT_MAX : PID2.out);
 	PID2.out = ((PID2.out < -OUT_MAX) ? -OUT_MAX : PID2.out);
 	return PID2.out;
@@ -249,12 +269,14 @@ double chassis_motor_2_pid() // 电机2
 
 double chassis_motor_3_pid() // 电机3
 {
-	double vx = DBUS_decode_val.rocker[2]; // 修正：添加KV系数
+	double vx = DBUS_decode_val.rocker[2];
 	double vy = DBUS_decode_val.rocker[3] * KV;
 	double vc = DBUS_decode_val.rocker[0] * KV;
 
-	yaw = - get_INS_angle_point()[0];
-	if(yaw >= -0.01 && yaw <= 0.01)yaw = 0;
+	yaw = -get_INS_angle_point()[0];
+	yaw = round(yaw * 100.0) / 100.0; // 四舍五入保留两位小数，减少噪声
+	if (yaw >= -0.05 && yaw <= 0.05)
+		yaw = 0; // 增大死区，减少抖动
 	double sin_yaw = sin(yaw);
 	double cos_yaw = cos(yaw);
 	double vx_set = cos_yaw * vx - sin_yaw * vy;
@@ -277,7 +299,15 @@ double chassis_motor_3_pid() // 电机3
 	{
 		PID3.iout = 0;
 	}
-	PID3.out = PID3.pout + PID3.iout + PID3.dout;
+	// 添加输出死区，减少小幅振荡
+	if (fabs(PID3.cur_error) < 10.0)
+	{
+		PID3.out = 0;
+	}
+	else
+	{
+		PID3.out = PID3.pout + PID3.iout + PID3.dout;
+	}
 	PID3.out = ((PID3.out > OUT_MAX) ? OUT_MAX : PID3.out);
 	PID3.out = ((PID3.out < -OUT_MAX) ? -OUT_MAX : PID3.out);
 	return PID3.out;

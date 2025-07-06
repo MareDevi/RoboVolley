@@ -8,17 +8,24 @@
 #include "rob2.h"
 #include <stdbool.h>
 #include "bsp_uart.h"
+#include "usart.h"
+#include "stdio.h"
+#include "string.h"
 
 #define CAN_CHASSIS_ALL_ID 0x200
 #define CAN_3508_M1_ID 0x201
 #define CAN_3508_M2_ID 0x202
 #define CAN_3508_M3_ID 0x203
+// #define CAN_3508_M3_ID 0x201
+// #define CAN_3508_M2_ID 0x202
+// #define CAN_3508_M1_ID 0x203
 #define SPEED_SCALE 7.8F
 #define KR 290.0F
 
 // 声明一个静态变量来保存目标航向角
 static double target_yaw = 0.0;
 static bool heading_lock_first_time = true;
+char uart1_tx_debug_data[300]; // 用于接收串口数据
 
 // PID信息
 PID_typedef PID1;
@@ -111,9 +118,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		}
 		}
 	}
-	else if(rx_header.IDE == CAN_ID_EXT && hcan == &hcan2)
+	else if (rx_header.IDE == CAN_ID_EXT && hcan == &hcan2)
 	{
-		//RobStrite_Motor_Analysis(&motor4,rx_data,rx_header.ExtId);
+		// RobStrite_Motor_Analysis(&motor4,rx_data,rx_header.ExtId);
 		motor4.Pos_Info.Angle = uint16_to_float(rx_data[0] << 8 | rx_data[1], P_MIN, P_MAX, 16);
 		PossiBuffSnd.Pitch = motor4.Pos_Info.Angle;
 	}
@@ -197,11 +204,11 @@ void pid_init()
 	PID3.his_error = 0;
 
 	// 初始化Yaw轴PID
-	PID_yaw.kp = 50.0f;	   // 降低Kp值，避免过度修正（原290.0f太大）
-	PID_yaw.ki = 0.0f;	   // Ki先设为0，防止积分饱和问题
-	PID_yaw.kd = 5.0f;	   // 添加小的微分项，提高稳定性
-	PID_yaw.out_max = 100; // 进一步限制最大修正角速度（原1000太大）
-	PID_yaw.iout_max = 50; // 降低积分限制（原500太大）
+	PID_yaw.kp = 3000.0f;	  // 降低Kp值，避免过度修正
+	PID_yaw.ki = 0.0f;		  // Ki先设为0，防止积分饱和问题
+	PID_yaw.kd = 5.0f;		  // 添加小的微分项，提高稳定性
+	PID_yaw.out_max = 100000; // 进一步限制最大修正角速度（原1000太大）
+	PID_yaw.iout_max = 50;	  // 降低积分限制（原500太大）
 	PID_yaw.pout = 0;
 	PID_yaw.iout = 0;
 	PID_yaw.dout = 0;
@@ -309,10 +316,10 @@ void chassis_control_task(void)
 				calculate_pid(&PID_yaw, 0, -yaw_error, false);
 
 			// 限制修正速度的幅度，避免过大的修正
-			if (yaw_correction_speed > 50)
-				yaw_correction_speed = 50;
-			if (yaw_correction_speed < -50)
-				yaw_correction_speed = -50;
+			// if (yaw_correction_speed > 50)
+			// 	yaw_correction_speed = 50;
+			// if (yaw_correction_speed < -50)
+			// 	yaw_correction_speed = -50;
 		}
 		else
 		{
@@ -353,6 +360,9 @@ void chassis_control_task(void)
 		calculate_pid(&PID2, v_target2, motor_chassis[1].speed_rpm, false);
 	double motor_out3 =
 		calculate_pid(&PID3, v_target3, motor_chassis[2].speed_rpm, false);
+
+	sprintf((char *)uart1_tx_debug_data, "%d,%d\n", (int)(v_target1 * 100), (int)(motor_chassis[0].speed_rpm * 100));
+	HAL_UART_Transmit_DMA(&huart1, (uint8_t *)uart1_tx_debug_data, strlen(uart1_tx_debug_data));
 
 	chassis_can_cmd(motor_out1, motor_out2, motor_out3);
 	HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);

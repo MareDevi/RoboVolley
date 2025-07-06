@@ -5,31 +5,29 @@
 #include "can.h"
 #include "pid.h"
 
-
-#define KP 17.0F
-#define KI 0.01F
-#define KD 0.05F
-#define IOUT_MAX 1200.0F
+#define KP 10.5F
+#define KI 0.6F
+#define KD 0.3F
+#define IOUT_MAX 800.0F
 #define OUT_MAX 3000.0F
 
+typedef struct
+{
+	uint16_t ecd;
+	int16_t speed_rpm;
+	int16_t given_current;
+	uint8_t temperate;
+	int16_t last_ecd;
+} motor_measure_t;
 
-typedef struct 
-{ 
-    uint16_t ecd; 
-    int16_t speed_rpm; 
-    int16_t given_current; 
-    uint8_t temperate; 
-    int16_t last_ecd; 
-}                       motor_measure_t; 
-
-extern   motor_measure_t   motor_chassis[3];
+extern motor_measure_t motor_chassis[3];
 
 // 全局调试变量
 extern double v1, v2, v3, yaw;
 
-typedef struct 
-{ 
-  double kp;
+typedef struct
+{
+	double kp;
 	double ki;
 	double kd;
 	double pout;
@@ -40,7 +38,7 @@ typedef struct
 	double out_max;
 	double cur_error;
 	double his_error;
-}                       PID_typedef;
+} PID_typedef;
 
 extern PID_typedef PID1, PID2, PID3, PID_yaw;
 
@@ -63,7 +61,7 @@ void val_clear(void);
 
 // 已弃用的单独电机PID函数声明（已在chassis.c中注释掉）
 // double chassis_motor_1_pid(void);
-// double chassis_motor_2_pid(void);  
+// double chassis_motor_2_pid(void);
 // double chassis_motor_3_pid(void);
 // double chassis_motor_1_pid_stop(void);
 // double chassis_motor_2_pid_stop(void);

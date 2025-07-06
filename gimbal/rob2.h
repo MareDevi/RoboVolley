@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// ³£Á¿¶¨Òå
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 #define P_MIN -12.5f
 #define P_MAX 12.5f
 #define V_MIN -44.0f
@@ -18,7 +18,7 @@
 #define T_MIN -17.0f
 #define T_MAX 17.0f
 
-// Í¨ÐÅÀàÐÍ¶¨Òå
+// Í¨ï¿½ï¿½ï¿½ï¿½ï¿½Í¶ï¿½ï¿½ï¿½
 #define Communication_Type_Get_ID 0
 #define Communication_Type_MotionControl 1
 #define Communication_Type_MotorEnable 3
@@ -28,24 +28,26 @@
 #define Communication_Type_Can_ID 7
 #define Communication_Type_SetPosZero 6
 
-// ¿ØÖÆÄ£Ê½¶¨Òå
+// ï¿½ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½ï¿½ï¿½
 #define move_control_mode 0
 #define Pos_control_mode 5
 #define Speed_control_mode 2
 #define Elect_control_mode 3
 #define Set_Zero_mode 4
 
-// Êý¾Ý¶ÁÐ´Ä£Ê½¶¨Òå
+// ï¿½ï¿½ï¿½Ý¶ï¿½Ð´Ä£Ê½ï¿½ï¿½ï¿½ï¿½
 #define Set_mode 'j'
 #define Set_parameter 'p'
 
-// Êý¾Ý½á¹¹¶¨Òå
-typedef struct {
+// ï¿½ï¿½ï¿½Ý½á¹¹ï¿½ï¿½ï¿½ï¿½
+typedef struct
+{
     uint16_t index;
     float data;
 } DataEntry;
 
-typedef struct {
+typedef struct
+{
     DataEntry run_mode;
     DataEntry iq_ref;
     DataEntry spd_ref;
@@ -63,7 +65,8 @@ typedef struct {
     DataEntry rotation;
 } DataReadWrite;
 
-typedef struct {
+typedef struct
+{
     float Angle;
     float Speed;
     float Torque;
@@ -71,7 +74,8 @@ typedef struct {
     uint8_t pattern;
 } MotorPosInfo;
 
-typedef struct {
+typedef struct
+{
     float set_motor_mode;
     float set_Torque;
     float set_angle;
@@ -81,10 +85,10 @@ typedef struct {
     float set_current;
     float set_limit_cur;
     float set_acceleration;
-    float output;  // Ìí¼Óoutput³ÉÔ±
+    float output; // ï¿½ï¿½ï¿½ï¿½outputï¿½ï¿½Ô±
 } MotorSetAll;
 
-// ÒÆ³ýÖØ¸´¶¨Òå£¬Ê¹ÓÃSTM32 HAL¿âÖÐµÄ¶¨Òå
+// ï¿½Æ³ï¿½ï¿½Ø¸ï¿½ï¿½ï¿½ï¿½å£¬Ê¹ï¿½ï¿½STM32 HALï¿½ï¿½ï¿½ÐµÄ¶ï¿½ï¿½ï¿½
 // typedef struct {
 //     uint8_t IDE;
 //     uint8_t RTR;
@@ -92,8 +96,9 @@ typedef struct {
 //     uint32_t ExtId;
 // } CAN_TxHeaderTypeDef;
 
-// µç»ú¿ØÖÆ½á¹¹Ìå
-typedef struct {
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ½á¹¹ï¿½ï¿½
+typedef struct
+{
     uint8_t CAN_ID;
     uint8_t Master_CAN_ID;
     MotorPosInfo Pos_Info;
@@ -104,31 +109,31 @@ typedef struct {
     uint16_t Index_List[15];
 } RobStrite_Motor;
 
-// º¯ÊýÉùÃ÷
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 float uint16_to_float(uint16_t x, float x_min, float x_max, int bits);
 int float_to_uint(float x, float x_min, float x_max, int bits);
-float Byte_to_float(uint8_t* bytedata);
+float Byte_to_float(uint8_t *bytedata);
 
-void RobStrite_Motor_Init(RobStrite_Motor* motor, uint8_t CAN_Id);
-void RobStrite_Motor_Init_With_Offset(RobStrite_Motor* motor, float (*Offset_MotoFunc)(float Motor_Tar), uint8_t CAN_Id);
-void DataReadWrite_Init(DataReadWrite* drw, const uint16_t* index_list);
+void RobStrite_Motor_Init(RobStrite_Motor *motor, uint8_t CAN_Id);
+void RobStrite_Motor_Init_With_Offset(RobStrite_Motor *motor, float (*Offset_MotoFunc)(float Motor_Tar), uint8_t CAN_Id);
+void DataReadWrite_Init(DataReadWrite *drw, const uint16_t *index_list);
 
-void RobStrite_Motor_Analysis(RobStrite_Motor* motor, uint8_t* DataFrame, uint32_t ID_ExtId);
-void RobStrite_Get_CAN_ID(RobStrite_Motor* motor);
-void RobStrite_Motor_move_control(RobStrite_Motor* motor, float Torque, float Angle, float Speed, float Kp, float Kd);
-void RobStrite_Motor_Pos_control(RobStrite_Motor* motor, float Speed, float Angle);
-void RobStrite_Motor_Speed_control(RobStrite_Motor* motor, float Speed, float acceleration, float limit_cur);
-void RobStrite_Motor_current_control(RobStrite_Motor* motor, float current);
-void RobStrite_Motor_Set_Zero_control(RobStrite_Motor* motor);
-void Enable_Motor(RobStrite_Motor* motor);
-void Disenable_Motor(RobStrite_Motor* motor, uint8_t clear_error);
-void Set_RobStrite_Motor_parameter(RobStrite_Motor* motor, uint16_t Index, float Value, char Value_mode);
-void Get_RobStrite_Motor_parameter(RobStrite_Motor* motor, uint16_t Index);
-void Set_CAN_ID(RobStrite_Motor* motor, uint8_t Set_CAN_ID);
-void Set_ZeroPos(RobStrite_Motor* motor);
-void Set_RobStrite_3Motor_simully_parameter(RobStrite_Motor* motor1, RobStrite_Motor* motor2, RobStrite_Motor* motor3, uint16_t Index, float Value, char Value_mode);
-void RobStrite_3Motor_simully_Pos_control(RobStrite_Motor* motor1,RobStrite_Motor* motor2,RobStrite_Motor* motor3, float Speed, float Angle);
-#endif  //__ROBSTRITE_H__
+void RobStrite_Motor_Analysis(RobStrite_Motor *motor, uint8_t *DataFrame, uint32_t ID_ExtId);
+void RobStrite_Get_CAN_ID(RobStrite_Motor *motor);
+void RobStrite_Motor_move_control(RobStrite_Motor *motor, float Torque, float Angle, float Speed, float Kp, float Kd);
+void RobStrite_Motor_Pos_control(RobStrite_Motor *motor, float Speed, float Angle);
+void RobStrite_Motor_Speed_control(RobStrite_Motor *motor, float Speed, float acceleration, float limit_cur);
+void RobStrite_Motor_current_control(RobStrite_Motor *motor, float current);
+void RobStrite_Motor_Set_Zero_control(RobStrite_Motor *motor);
+void Enable_Motor(RobStrite_Motor *motor);
+void Disenable_Motor(RobStrite_Motor *motor, uint8_t clear_error);
+void Set_RobStrite_Motor_parameter(RobStrite_Motor *motor, uint16_t Index, float Value, char Value_mode);
+void Get_RobStrite_Motor_parameter(RobStrite_Motor *motor, uint16_t Index);
+void Set_CAN_ID(RobStrite_Motor *motor, uint8_t Set_CAN_ID);
+void Set_ZeroPos(RobStrite_Motor *motor);
+void Set_RobStrite_3Motor_simully_parameter(RobStrite_Motor *motor1, RobStrite_Motor *motor2, RobStrite_Motor *motor3, uint16_t Index, float Value, char Value_mode);
+void RobStrite_3Motor_simully_Pos_control(RobStrite_Motor *motor1, RobStrite_Motor *motor2, RobStrite_Motor *motor3, float Speed, float Angle);
+#endif //__ROBSTRITE_H__
 
 #ifndef SHARED_H
 #define SHARED_H

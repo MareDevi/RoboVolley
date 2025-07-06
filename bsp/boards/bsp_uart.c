@@ -2,7 +2,7 @@
 #include "usart.h"
 
 extern DMA_HandleTypeDef hdma_usart1_rx;
-//由于不知道传什么信息，发送是基于全场定位 Pitch X Y Yaw 顺序写的。
+//锟斤拷锟节诧拷知锟斤拷锟斤拷什么锟斤拷息锟斤拷锟斤拷锟斤拷锟角伙拷锟斤拷全锟斤拷锟斤拷位 Pitch X Y Yaw 顺锟斤拷写锟侥★拷
 uint8_t uart1_rx_buffer[33] =
 	{0xa5,0x0d,0x00,0x00,0xd3,0x02,0x04
 	,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
@@ -23,7 +23,7 @@ void uart1_init(void)
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) //DMA
 {
-		if(huart == &huart1)
+	if(huart == &huart1)
 	{
 		Rcf_decode(&PossiBuffRcf, uart1_rx_buffer);
 		Snd_code(&PossiBuffSnd, uart1_tx_buffer);

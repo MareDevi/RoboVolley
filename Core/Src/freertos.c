@@ -34,6 +34,7 @@
 #include "chassis_task.h"
 #include "INS_task.h"
 #include "bsp_buzzer.h"
+#include "bsp_uart.h"
 // #include "hval_out.h"
 /* USER CODE END Includes */
 
@@ -229,6 +230,7 @@ void Buff_ReCf(void const * argument)
 
 			DBUS_decode_val.pitch = 0;
 			pid_init();
+			HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
 		}
 		if (DBUS_decode_val.control_mode != 0 && DBUS_decode_val.isenable == 0)
 		{

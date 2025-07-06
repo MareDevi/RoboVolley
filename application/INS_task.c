@@ -35,7 +35,7 @@
 #include "hDBUS.h"
 #include "MahonyAHRS.h"
 #include "math.h"
-
+#include "bsp_uart.h"
 
 #define IMU_temp_PWM(pwm)  imu_pwm_set(pwm)                    //pwm����
 
@@ -184,6 +184,7 @@ void INS_task(void const *pvParameters)
 
 						AHRS_update(INS_quat, 0.001f, bmi088_real_data.gyro, bmi088_real_data.accel, ist8310_real_data.mag);
 						get_angle(INS_quat, INS_angle + INS_YAW_ADDRESS_OFFSET, INS_angle + INS_PITCH_ADDRESS_OFFSET, INS_angle + INS_ROLL_ADDRESS_OFFSET);	
+						PossiBuffSnd.Yaw = INS_angle[0];
 				}
         
 

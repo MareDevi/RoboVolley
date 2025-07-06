@@ -114,7 +114,7 @@ int main(void)
 	HAL_CAN_Start(&hcan1);
 	HAL_CAN_Start(&hcan2);
   delay_init();
-	uart_init();
+	uart1_init();
   can_filter_init();
   /* USER CODE END 2 */
 

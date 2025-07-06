@@ -7,6 +7,7 @@
 #include "math.h"
 #include "rob2.h"
 #include <stdbool.h>
+#include "bsp_uart.h"
 
 #define CAN_CHASSIS_ALL_ID 0x200
 #define CAN_3508_M1_ID 0x201
@@ -110,12 +111,12 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		}
 		}
 	}
-	//	else if(rx_header.IDE == CAN_ID_EXT && hcan == &hcan2)
-	//	{
-	//		RobStrite_Motor_Analysis(&motor1,rx_data,rx_header.ExtId);
-	//		RobStrite_Motor_Analysis(&motor2,rx_data,rx_header.ExtId);
-	//		RobStrite_Motor_Analysis(&motor2,rx_data,rx_header.ExtId);
-	//	}
+	else if(rx_header.IDE == CAN_ID_EXT && hcan == &hcan2)
+	{
+		//RobStrite_Motor_Analysis(&motor4,rx_data,rx_header.ExtId);
+		motor4.Pos_Info.Angle = uint16_to_float(rx_data[0] << 8 | rx_data[1], P_MIN, P_MAX, 16);
+		PossiBuffSnd.Pitch = motor4.Pos_Info.Angle;
+	}
 }
 
 // 关闭电机断电

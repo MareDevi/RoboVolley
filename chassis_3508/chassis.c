@@ -279,7 +279,7 @@ void chassis_control_task(void)
 
 	// 2. 计算Yaw轴修正
 	double current_yaw =
-		get_INS_angle_point()[0]; // 获取当前航向角，与之前保持一致
+		-get_INS_angle_point()[0]; // 获取当前航向角，与之前保持一致
 	yaw = current_yaw;
 	double yaw_correction_speed = 0.0;
 
@@ -295,13 +295,18 @@ void chassis_control_task(void)
 
 		// 计算角度误差
 		double yaw_error = target_yaw - current_yaw;
-		yaw_er = yaw_error; // 调试用，保留角度误差
+
+		while (yaw_error > 3.14159265)
+			yaw_error -= 2 * 3.14159265;
+		while (yaw_error < -3.14159265)
+			yaw_error += 2 * 3.14159265;
+
 		// 添加角度死区，避免在静止时持续修正微小误差
 		if (fabs(yaw_error) > 0.05) // 角度死区：约3度（假设单位是弧度）
 		{
 			// 使用通用PID计算函数来计算修正速度
 			yaw_correction_speed =
-				calculate_pid(&PID_yaw, target_yaw, current_yaw, false);
+				calculate_pid(&PID_yaw, 0, -yaw_error, false);
 
 			// 限制修正速度的幅度，避免过大的修正
 			if (yaw_correction_speed > 50)

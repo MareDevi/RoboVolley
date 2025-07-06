@@ -97,7 +97,8 @@ int Rcf_decode(possi_buff_typedef *PossiBuffRcf, uint8_t *bytes) {
     PossiBuffRcf->X     = be_bytes_to_float(&bytes[11]);
     PossiBuffRcf->Y     = be_bytes_to_float(&bytes[15]);
     PossiBuffRcf->Yaw   = be_bytes_to_float(&bytes[19]);
-
+		
+		return 0;
 }
 
 //-------------------------code buff to send -------

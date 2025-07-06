@@ -189,16 +189,16 @@ void Buff_ReCf(void const * argument)
 			DBUS_decode_val.mod = 0;
 			// 关电机
 			val_clear();
-			DBUS_decode_val.control_mode = 0; //
-			DBUS_decode_val.pitch = 0;		  //
+			DBUS_decode_val.control_mode = 0; 
+			DBUS_decode_val.pitch = 0;		  
 			DBUS_decode_val.isenable = 0;
-			Disenable_Motor(&motor4, 0); //
+			Disenable_Motor(&motor4, 0); 
 			osDelay(0);
-			Disenable_Motor(&motor1, 0); //
+			Disenable_Motor(&motor1, 0); 
 			osDelay(0);
-			Disenable_Motor(&motor2, 0); //
+			Disenable_Motor(&motor2, 0); 
 			osDelay(0);
-			Disenable_Motor(&motor3, 0); //
+			Disenable_Motor(&motor3, 0); 
 			osDelay(0);
 			// HAL_CAN_Stop(&hcan1);
 		}
@@ -299,6 +299,11 @@ void Buff_ReCf(void const * argument)
 								break;
 				}
 			}
+			else
+			{
+				buzzer_state = BUZZER_STATE_IDLE;
+				buzzer_off();
+			}
 		}
 	}
 
@@ -397,7 +402,18 @@ void gimbal(void const * argument)
 		}
 		else if (DBUS_decode_val.control_mode == 2) // 上位机控制
 		{
-			;
+			float pitch_from_host = (PossiBuffRcf.Pitch > 0.1) ? 0.1 : ((PossiBuffRcf.Pitch < -0.8) ? -0.8 : PossiBuffRcf.Pitch);
+			if(DBUS_decode_val.sw[1] == 2)
+					pitch_from_host = 0.0;
+			RobStrite_Motor_Pos_control(&motor4, 1.2, pitch_from_host);
+			osDelay(1);
+		}
+		else if (DBUS_decode_val.control_mode == 0)
+		{
+			delay_tag = 0;
+			motor_angle = 0.007;
+			motor_vec = 1;
+			RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
 		}
 	}
   /* USER CODE END gimbal */

@@ -52,8 +52,8 @@ void chassis_task(void const *argument)
     osDelay(1000);
 
     // 初始化PID和CAN
-    pid_init();
-    can_filter_init();
+    // pid_init();
+    // can_filter_init();
 
     for (;;)
     {

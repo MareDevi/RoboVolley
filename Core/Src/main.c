@@ -115,6 +115,7 @@ int main(void)
 	HAL_CAN_Start(&hcan2);
   delay_init();
 	uart_init();
+  can_filter_init();
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in cmsis_os2.c) */

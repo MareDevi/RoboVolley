@@ -262,7 +262,7 @@ static double calculate_pid(PID_typedef *pid, double target_val,
 	return pid->out;
 }
 
-double v1, v2, v3; // 调试用
+double v1, v2, v3, yaw_er; // 调试用
 
 /**
  * @brief 底盘主控制任务，包含航向锁定
@@ -278,7 +278,8 @@ void chassis_control_task(void)
 
 	// 2. 计算Yaw轴修正
 	double current_yaw =
-		-get_INS_angle_point()[0]; // 获取当前航向角，与之前保持一致
+		get_INS_angle_point()[0]; // 获取当前航向角，与之前保持一致
+	yaw = current_yaw;
 	double yaw_correction_speed = 0.0;
 
 	// 航向锁定逻辑：当用户没有主动命令旋转时，启用航向锁定
@@ -293,7 +294,7 @@ void chassis_control_task(void)
 
 		// 计算角度误差
 		double yaw_error = target_yaw - current_yaw;
-
+		yaw_er = yaw_error; // 调试用，保留角度误差
 		// 添加角度死区，避免在静止时持续修正微小误差
 		if (fabs(yaw_error) > 0.05) // 角度死区：约3度（假设单位是弧度）
 		{

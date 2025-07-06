@@ -206,7 +206,6 @@ void Buff_ReCf(void const * argument)
 			DBUS_decode_val.mod = 1;
 			DBUS_decode_val.control_mode = 0;
 			// 开电机
-			can_filter_init();
 
 			RobStrite_Motor_Init(&motor4, 0x04);
 			osDelay(2);

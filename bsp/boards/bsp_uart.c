@@ -3,7 +3,6 @@
 #include "crc.h"
 #include "bsp_buzzer.h"
 extern DMA_HandleTypeDef hdma_usart1_rx;
-//ÓÉÓÚ²»ÖªµÀ´«Ê²Ã´ĞÅÏ¢£¬·¢ËÍÊÇ»ùÓÚÈ«³¡¶¨Î» Pitch X Y Yaw Ë³ĞòĞ´µÄ¡£
 uint8_t uart1_rx_buffer[25] =
 	{0xa5,0x10,0x00,0x00,0xd3,0x00,0x00
 	,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
@@ -12,7 +11,7 @@ uint8_t uart1_tx_buffer[25] =
 	{0xa5,0x10,0x00,0x00,0xd3,0x00,0x00
 	,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	,0x98,0x1f};
-//0~6Îª¹Ì¶¨Î» 7~10Îªpitch 11~14ÎªX 15~18ÎªY 19~22Îªyaw 23~24ÎªĞ£ÑéÎ»
+//0~6ä¸ºå›ºå®šä½ 7~10ä¸ºpitch 11~14ä¸ºX 15~18ä¸ºY 19~22ä¸ºyaw 23~24ä¸ºæ ¡éªŒä½
 possi_buff_typedef PossiBuffRcf;
 possi_buff_typedef PossiBuffSnd;
 
@@ -24,7 +23,7 @@ void uart1_init(void)
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) //DMA
 {
-		if(huart == &huart1)
+	if(huart == &huart1)
 	{
 		int receive_error = Rcf_decode(&PossiBuffRcf, uart1_rx_buffer);
 		Snd_code(&PossiBuffSnd, uart1_tx_buffer);
@@ -44,7 +43,7 @@ void float_to_be_bytes(float value, uint8_t bytes[4]) {
     } converter;
     
     converter.fval = value;
-    // ×ª»»Îª´ó¶ËĞò (Big-Endian)
+    // è½¬æ¢ä¸ºå¤§ç«¯åº (Big-Endian)
     bytes[0] = converter.bval[3];
     bytes[1] = converter.bval[2];
     bytes[2] = converter.bval[1];
@@ -56,7 +55,7 @@ float be_bytes_to_float(const uint8_t bytes[4]) {
         uint8_t bval[4];
     } converter;
     
-    // ´ó¶ËĞò×ª»» (Big-Endian to host)
+    // å¤§ç«¯åºè½¬æ¢ (Big-Endian to host)
     converter.bval[3] = bytes[0];
     converter.bval[2] = bytes[1];
     converter.bval[1] = bytes[2];
@@ -66,25 +65,25 @@ float be_bytes_to_float(const uint8_t bytes[4]) {
 }
 
 /**
- * @brief ½âÂë´øĞ£ÑéµÄÊı¾İ°ü
- * @param PossiBuffRcf Ä¿±êÊı¾İ½á¹¹Ö¸Õë
- * @param bytes Ô­Ê¼Êı¾İ»º³åÇø
- * @param data_length Êı¾İ°ü×Ü³¤¶È
- * @return ´íÎó×´Ì¬Âë:
- *        0 = ³É¹¦
- *       -1 = ÎŞĞ§ÊäÈë²ÎÊı
- *       -2 = CRC8 Ğ£ÑéÊ§°Ü
- *       -3 = CRC16 Ğ£ÑéÊ§°Ü
+ * @brief è§£ç å¸¦æ ¡éªŒçš„æ•°æ®åŒ…
+ * @param PossiBuffRcf ç›®æ ‡æ•°æ®ç»“æ„æŒ‡é’ˆ
+ * @param bytes åŸå§‹æ•°æ®ç¼“å†²åŒº
+ * @param data_length æ•°æ®åŒ…æ€»é•¿åº¦
+ * @return é”™è¯¯çŠ¶æ€ç :
+ *        0 = æˆåŠŸ
+ *       -1 = æ— æ•ˆè¾“å…¥å‚æ•°
+ *       -2 = CRC8 æ ¡éªŒå¤±è´¥
+ *       -3 = CRC16 æ ¡éªŒå¤±è´¥
  */
 int Rcf_decode(possi_buff_typedef *PossiBuffRcf, uint8_t *bytes) {
     if (!PossiBuffRcf || !bytes) return -1;
     
-    // CRC8 Ğ£ÑéÍ·£¨Ç°4×Ö½Ú£©
+    // CRC8 æ ¡éªŒå¤´ï¼ˆå‰4å­—èŠ‚ï¼‰
     if (bytes[4] != Get_CRC8_Check_Sum(bytes, 4, CRC8_INIT)) {
         return -2;
     }
     
-    // Ê¹ÓÃÏÖÓĞº¯Êı½øĞĞCRC16Ğ£Ñé
+    // ä½¿ç”¨ç°æœ‰å‡½æ•°è¿›è¡ŒCRC16æ ¡éªŒ
     uint16_t crc_calc = Get_CRC16_Check_Sum(bytes, 23, CRC_INIT);
     uint16_t crc_recv = (bytes[23] << 8) | bytes[24];
     
@@ -92,7 +91,7 @@ int Rcf_decode(possi_buff_typedef *PossiBuffRcf, uint8_t *bytes) {
         return -3;
     }
     
-    // ´Ó×Ö½ÚÊı×éÖĞÌáÈ¡¸¡µãÊıÖµ
+    // ä»å­—èŠ‚æ•°ç»„ä¸­æå–æµ®ç‚¹æ•°å€¼
     PossiBuffRcf->Pitch = be_bytes_to_float(&bytes[7]);
     PossiBuffRcf->X     = be_bytes_to_float(&bytes[11]);
     PossiBuffRcf->Y     = be_bytes_to_float(&bytes[15]);
@@ -108,23 +107,23 @@ void Snd_code(possi_buff_typedef *PossiBuffSnd, uint8_t *bytes) {
     uint8_t x_bytes[4];
     uint8_t y_bytes[4];
     
-    // ×ª»»¸¡µãÊıÎª´ó¶ËĞò×Ö½ÚÊı×é
+    // è½¬æ¢æµ®ç‚¹æ•°ä¸ºå¤§ç«¯åºå­—èŠ‚æ•°ç»„
     float_to_be_bytes(PossiBuffSnd->Pitch, pitch_bytes);
     float_to_be_bytes(PossiBuffSnd->Yaw, yaw_bytes);
     float_to_be_bytes(PossiBuffSnd->X, x_bytes);
     float_to_be_bytes(PossiBuffSnd->Y, y_bytes);
     
-    // ÉèÖÃ³õÊ¼CRCĞ£Ñé
+    // è®¾ç½®åˆå§‹CRCæ ¡éªŒ
     bytes[4] = Get_CRC8_Check_Sum(bytes, 4, CRC8_INIT);
     
-    // ÅúÁ¿ÉèÖÃ¸¡µãÊı×Ö½Ú
+    // æ‰¹é‡è®¾ç½®æµ®ç‚¹æ•°å­—èŠ‚
     memcpy(&bytes[7], pitch_bytes, 4);
     memcpy(&bytes[11], x_bytes, 4);
     memcpy(&bytes[15], y_bytes, 4);
     memcpy(&bytes[19], yaw_bytes, 4);
     
-    // ¼ÆËã²¢ÉèÖÃCRC16Ğ£Ñé
+    // è®¡ç®—å¹¶è®¾ç½®CRC16æ ¡éªŒ
     uint16_t crc16 = Get_CRC16_Check_Sum(bytes, 23, CRC_INIT);
-    bytes[23] = (crc16 >> 8) & 0xFF;  // ´æ´¢¸ß×Ö½Ú
-    bytes[24] = crc16 & 0xFF;         // ´æ´¢µÍ×Ö½Ú
+    bytes[23] = (crc16 >> 8) & 0xFF;  // å­˜å‚¨é«˜å­—èŠ‚
+    bytes[24] = crc16 & 0xFF;         // å­˜å‚¨ä½å­—èŠ‚
 }

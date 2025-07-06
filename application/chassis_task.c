@@ -4,6 +4,10 @@
 #include "hchassis.h"
 #include "hDBUS.h"
 
+#include "usart.h"
+#include <stdio.h>
+
+
 // 底盘控制任务
 // void chassis_task(void const *argument)
 // {
@@ -50,6 +54,7 @@ void chassis_task(void const *argument)
 {
     // 等待其他任务初始化
     osDelay(1000);
+		double v2 = 0.14;
 
     // 初始化PID和CAN
     // pid_init();
@@ -57,6 +62,8 @@ void chassis_task(void const *argument)
 
     for (;;)
     {
+//				sprintf(uart1_tx_debug_data, "%.2lf\n", v2);
+//				HAL_UART_Transmit_DMA(&huart1, uart1_tx_debug_data, strlen(uart1_tx_debug_data));
         // 根据遥控器的模式切换控制逻辑
         // 模式1: 遥控器控制
         if (DBUS_decode_val.control_mode == 1)

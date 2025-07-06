@@ -4,15 +4,15 @@
 #include "bsp_buzzer.h"
 extern DMA_HandleTypeDef hdma_usart1_rx;
 //由于不知道传什么信息，发送是基于全场定位 Pitch X Y Yaw 顺序写的。
-uint8_t uart1_rx_buffer[26] =
-	{0xa5,0x11,0x00,0x00,0xd3,0x02,0x04
+uint8_t uart1_rx_buffer[25] =
+	{0xa5,0x10,0x00,0x00,0xd3,0x00,0x00
 	,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-	,0x00,0x98,0x1f};
-uint8_t uart1_tx_buffer[26] =
-	{0xa5,0x11,0x00,0x00,0xd3,0x02,0x04
+	,0x98,0x1f};
+uint8_t uart1_tx_buffer[25] =
+	{0xa5,0x10,0x00,0x00,0xd3,0x00,0x00
 	,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-	,0x00,0x98,0x1f};
-//0~6为固定位 7~10为pitch 11~14为X 15~18为Y 19~22为yaw 23为0 24~25为校验位
+	,0x98,0x1f};
+//0~6为固定位 7~10为pitch 11~14为X 15~18为Y 19~22为yaw 23~24为校验位
 possi_buff_typedef PossiBuffRcf;
 possi_buff_typedef PossiBuffSnd;
 
@@ -85,8 +85,8 @@ int Rcf_decode(possi_buff_typedef *PossiBuffRcf, uint8_t *bytes) {
     }
     
     // 使用现有函数进行CRC16校验
-    uint16_t crc_calc = Get_CRC16_Check_Sum(bytes, 24, CRC_INIT);
-    uint16_t crc_recv = (bytes[24] << 8) | bytes[25];
+    uint16_t crc_calc = Get_CRC16_Check_Sum(bytes, 23, CRC_INIT);
+    uint16_t crc_recv = (bytes[23] << 8) | bytes[24];
     
     if (crc_calc != crc_recv) {
         return -3;
@@ -123,7 +123,7 @@ void Snd_code(possi_buff_typedef *PossiBuffSnd, uint8_t *bytes) {
     memcpy(&bytes[19], yaw_bytes, 4);
     
     // 计算并设置CRC16校验
-    uint16_t crc16 = Get_CRC16_Check_Sum(bytes, 24, CRC_INIT);
-    bytes[24] = (crc16 >> 8) & 0xFF;  // 存储高字节
-    bytes[25] = crc16 & 0xFF;         // 存储低字节
+    uint16_t crc16 = Get_CRC16_Check_Sum(bytes, 23, CRC_INIT);
+    bytes[23] = (crc16 >> 8) & 0xFF;  // 存储高字节
+    bytes[24] = crc16 & 0xFF;         // 存储低字节
 }

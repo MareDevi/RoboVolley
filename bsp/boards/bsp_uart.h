@@ -1,7 +1,7 @@
 #ifndef __BSP_UART_H__
 #define __BSP_UART_H__
-#define MESSAGE_LEN 26
-#define DATA_LEN 17
+#define MESSAGE_LEN 25
+#define DATA_LEN 16
 #include "main.h"
 
 
@@ -17,8 +17,8 @@ typedef struct
 
 extern possi_buff_typedef PossiBuffRcf;
 extern possi_buff_typedef PossiBuffSnd;
-extern uint8_t uart1_rx_buffer[26];
-extern uint8_t uart1_tx_buffer[26];
+extern uint8_t uart1_rx_buffer[25];
+extern uint8_t uart1_tx_buffer[25];
 
 void uart1_init(void);
 

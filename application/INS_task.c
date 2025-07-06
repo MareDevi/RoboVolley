@@ -418,3 +418,13 @@ const fp32 *get_INS_angle_point(void)
     return INS_angle;
 }
 
+/**
+  * @brief          获取陀螺仪数据指针
+  * @param[in]      none
+  * @retval         返回陀螺仪数据数组指针，包含x, y, z轴角速度，单位rad/s
+  */
+const fp32 *get_gyro_data_point(void)
+{
+    return bmi088_real_data.gyro;
+}
+

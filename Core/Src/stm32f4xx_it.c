@@ -341,6 +341,20 @@ void TIM6_DAC_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles DMA2 stream2 global interrupt.
+  */
+//void DMA2_Stream2_IRQHandler(void)
+//{
+//  /* USER CODE BEGIN DMA2_Stream2_IRQn 0 */
+
+//  /* USER CODE END DMA2_Stream2_IRQn 0 */
+//  HAL_DMA_IRQHandler(&hdma_spi1_rx);
+//  /* USER CODE BEGIN DMA2_Stream2_IRQn 1 */
+
+//  /* USER CODE END DMA2_Stream2_IRQn 1 */
+//}
+
+/**
   * @brief This function handles DMA2 stream3 global interrupt.
   */
 void DMA2_Stream3_IRQHandler(void)

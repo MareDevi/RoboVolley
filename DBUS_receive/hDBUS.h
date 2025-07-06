@@ -23,9 +23,6 @@ typedef struct
 	int mod;
 	int control_mode;
 	double pitch;
-	int delay_tag;
-	int bounce_mode;
-	int bounce_time;
 	int isenable;
 } DECODE_VAL;
 

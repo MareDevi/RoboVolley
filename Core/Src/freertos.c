@@ -40,7 +40,8 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+RobStrite_Motor* motors[] = {&motor1, &motor2, &motor3, &motor4, &motor5};
+const uint8_t motor_ids[] = {0x01, 0x02, 0x03, 0x04, 0x05};
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -192,19 +193,11 @@ void Buff_ReCf(void const * argument)
 			DBUS_decode_val.control_mode = 0; 
 			DBUS_decode_val.pitch = 0;		  
 			DBUS_decode_val.isenable = 0;
-			Disenable_Motor(&motor5, 0); 
-			osDelay(0);
-			Disenable_Motor(&motor4, 0); 
-			osDelay(0);
-			Disenable_Motor(&motor1, 0); 
-			osDelay(0);
-			Disenable_Motor(&motor2, 0); 
-			osDelay(0);
-			Disenable_Motor(&motor3, 0); 
-			osDelay(0);
-			Disenable_Motor(&motor5, 0); 
-			osDelay(0);
-			// HAL_CAN_Stop(&hcan1);
+			
+			for (int i=0; i<5; i++) {
+        Disenable_Motor(motors[i], 0); 
+				osDelay(0);
+			}
 		}
 		else if (DBUS_decode_val.key == 1 && DBUS_decode_val.mod == 0)
 		{
@@ -212,40 +205,28 @@ void Buff_ReCf(void const * argument)
 			DBUS_decode_val.control_mode = 0;
 			// 开电机
 
-			RobStrite_Motor_Init(&motor4, 0x04);
-			osDelay(2);
-			RobStrite_Motor_Init(&motor1, 0x01);
-			RobStrite_Motor_Init(&motor2, 0x02);
-			RobStrite_Motor_Init(&motor3, 0x03);
-			RobStrite_Motor_Init(&motor5, 0x05);
-
-			Set_RobStrite_Motor_parameter(&motor4, 0x7005, 5, Set_mode);
-			osDelay(1);
-
-			Set_RobStrite_Motor_parameter(&motor1, 0x7005, 5, Set_mode);
-			Set_RobStrite_Motor_parameter(&motor2, 0x7005, 5, Set_mode);
-			osDelay(1);
-			Set_RobStrite_Motor_parameter(&motor3, 0x7005, 5, Set_mode);
-			Set_RobStrite_Motor_parameter(&motor5, 0x7005, 5, Set_mode);
-			osDelay(2);
-
+			for (int i=0; i<5; i++) {
+        RobStrite_Motor_Init(motors[i], motor_ids[i]);
+        osDelay(1); 
+			}
+			for (int i=0; i<5; i++) {
+        Set_RobStrite_Motor_parameter(motors[i], 0x7005, 5, Set_mode);
+				osDelay(1);
+			}
 			Enable_Motor(&motor4);
 			osDelay(1);
-			Set_ZeroPos(&motor5);
-			Set_ZeroPos(&motor1);
-			Set_ZeroPos(&motor2);
-			Set_ZeroPos(&motor3);
-
+			for (int i=0; i<5; i++) {
+				if(i!=3)	Set_ZeroPos(motors[i]);
+			}
 			DBUS_decode_val.pitch = 0;
 			pid_init();
 			HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
 		}
 		if (DBUS_decode_val.control_mode != 0 && DBUS_decode_val.isenable == 0)
 		{
-			RobStrite_Motor_Pos_control(&motor1, 0.5, 0.02);
-			RobStrite_Motor_Pos_control(&motor2, 0.5, 0.02);
-			RobStrite_Motor_Pos_control(&motor3, 0.5, 0.02);
-			
+			for (int i=0; i<3; i++) {
+				RobStrite_Motor_Pos_control(motors[i], 0.5, 0.02);
+			}
 			RobStrite_Motor_Pos_control(&motor5, 4.0, 0.0); // 要确认下正负
 			osDelay(2);
 			DBUS_decode_val.isenable = 1;

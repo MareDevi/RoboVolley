@@ -141,4 +141,5 @@ extern RobStrite_Motor motor1;
 extern RobStrite_Motor motor2;
 extern RobStrite_Motor motor3;
 extern RobStrite_Motor motor4;
+extern RobStrite_Motor motor5;
 #endif

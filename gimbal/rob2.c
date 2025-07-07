@@ -9,6 +9,7 @@ RobStrite_Motor motor1;
 RobStrite_Motor motor2;
 RobStrite_Motor motor3;
 RobStrite_Motor motor4;
+RobStrite_Motor motor5;
 
 // 类型变换
 float uint16_to_float(uint16_t x, float x_min, float x_max, int bits) {

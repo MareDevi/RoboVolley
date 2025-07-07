@@ -213,6 +213,7 @@ void Buff_ReCf(void const * argument)
 			RobStrite_Motor_Init(&motor1, 0x01);
 			RobStrite_Motor_Init(&motor2, 0x02);
 			RobStrite_Motor_Init(&motor3, 0x03);
+			RobStrite_Motor_Init(&motor4, 0x05);
 
 			Set_RobStrite_Motor_parameter(&motor4, 0x7005, 5, Set_mode);
 			osDelay(2);
@@ -220,9 +221,11 @@ void Buff_ReCf(void const * argument)
 			Set_RobStrite_Motor_parameter(&motor1, 0x7005, 5, Set_mode);
 			Set_RobStrite_Motor_parameter(&motor2, 0x7005, 5, Set_mode);
 			Set_RobStrite_Motor_parameter(&motor3, 0x7005, 5, Set_mode);
+			Set_RobStrite_Motor_parameter(&motor5, 0x7005, 5, Set_mode);
 			osDelay(2);
 
-			Enable_Motor(&motor4); //
+			Enable_Motor(&motor4);
+			Enable_Motor(&motor5);
 			osDelay(1);
 			Set_ZeroPos(&motor1);
 			Set_ZeroPos(&motor2);
@@ -237,6 +240,8 @@ void Buff_ReCf(void const * argument)
 			RobStrite_Motor_Pos_control(&motor1, 0.5, 0.02);
 			RobStrite_Motor_Pos_control(&motor2, 0.5, 0.02);
 			RobStrite_Motor_Pos_control(&motor3, 0.5, 0.02);
+			
+			RobStrite_Motor_Pos_control(&motor5, 4.0, -0.7); // 要确认下正负
 			osDelay(2);
 			DBUS_decode_val.isenable = 1;
 		}
@@ -322,8 +327,9 @@ void gimbal(void const * argument)
   /* USER CODE BEGIN gimbal */
 	/* Infinite loop */
 	TickType_t xLastWakeTime = xTaskGetTickCount();
-	const TickType_t xDelay25 = pdMS_TO_TICKS(25); // 10ms 转换为 tick
-	const TickType_t xDelay150 = pdMS_TO_TICKS(175); // 150ms 转换为 tick
+	const TickType_t xDelay25 = pdMS_TO_TICKS(25); // 25ms 转换为 tick
+	const TickType_t xDelay175 = pdMS_TO_TICKS(175); // 175ms 转换为 tick
+	const TickType_t xDelay200 = pdMS_TO_TICKS(200); // 200ms 转换为 tick
 	int delay_tag = 0;
 	int juggle = 0;
 	double motor_angle = 0.007;
@@ -334,28 +340,30 @@ void gimbal(void const * argument)
 		{
 			DBUS_decode_val.pitch += (-0.000006f * DBUS_decode_val.rocker[1]);
 			DBUS_decode_val.pitch = (DBUS_decode_val.pitch > 0.1) ? 0.1 : ((DBUS_decode_val.pitch < -0.8) ? -0.8 : DBUS_decode_val.pitch);
-			if(DBUS_decode_val.sw[1] == 2)
+			if(DBUS_decode_val.sw[1] == 2 && delay_tag < 5) // 发球模式在击球前保持直立
 					DBUS_decode_val.pitch = 0.0;
-			if(DBUS_decode_val.sw[1] == 3 && juggle == 0)
+			if(DBUS_decode_val.sw[1] == 2 &&  delay_tag >= 5) // 发球模式将云台向前倾，防止被打到
+					DBUS_decode_val.pitch = -0.8;
+			if(DBUS_decode_val.sw[1] == 3 && juggle == 0) // 初次进入对颠球模式将云台前倾
 			{
 					juggle = 1;
-					DBUS_decode_val.pitch = -0.35;
+					DBUS_decode_val.pitch = -0.45;
 			}
 			
-			RobStrite_Motor_Pos_control(&motor4, 1.2, DBUS_decode_val.pitch);
+			RobStrite_Motor_Pos_control(&motor4, 4, DBUS_decode_val.pitch);
 			osDelay(1);
 			
 			switch (delay_tag) 
 			{
-					case 0:
-							if (DBUS_decode_val.sw[1] != 3) 
+					case 0: // 默认状态
+							if (DBUS_decode_val.sw[1] != 3) // 在发球模式默认状态在限位处
 							{
 									motor_angle = 0.007;
 									motor_vec = 4;
 									RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
 									osDelay(0);
 							} 
-							else if (DBUS_decode_val.sw[1] == 3) 
+							else if (DBUS_decode_val.sw[1] == 3) // 在对颠球模式默认状态比限位高一些
 							{
 									motor_angle = 0.04;
 									motor_vec = 16;
@@ -364,7 +372,7 @@ void gimbal(void const * argument)
 							}
 							break;
 
-					case 1:
+					case 1: // 低速出限位一点
 							motor_angle = 0.04;
 							motor_vec = 1;
 							RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
@@ -372,12 +380,12 @@ void gimbal(void const * argument)
 							delay_tag = 2;
 							break;
 
-					case 2:
-							if (xTaskGetTickCount() - xLastWakeTime >= xDelay25)
+					case 2: // 等待25ms电机运行到指定角度
+							if (xTaskGetTickCount() - xLastWakeTime >= xDelay25) // 非阻塞式delay
 									delay_tag = 3;  // 状态转移 25ms
 							break;
 
-					case 3:
+					case 3: // 高速击球
 							motor_angle = 0.57;
 							motor_vec = 24;
 							RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
@@ -385,11 +393,44 @@ void gimbal(void const * argument)
 							delay_tag = 4;
 							break;
 
-					case 4:
-							if (xTaskGetTickCount() - xLastWakeTime >= xDelay150)
-									delay_tag = 0;  // 状态转移 150ms
+					case 4: // 等待175ms电机运行到指定角度
+							if (xTaskGetTickCount() - xLastWakeTime >= xDelay175)
+							{
+								if(DBUS_decode_val.sw[1] == 3) // 对颠球模式直接回默认状态
+									delay_tag = 0;  
+								else if(DBUS_decode_val.sw[1] == 2) // 进入发球状态
+									delay_tag = 5;  
+							}
 							break;
-
+							
+					case 5: // 回到发球默认状态并将云台向前倾一定角度，防止被发球板打到
+							motor_angle = 0.007;
+							motor_vec = 4;
+							RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
+							xLastWakeTime = xTaskGetTickCount();
+							delay_tag = 6;
+							break;
+					
+					case 6: // 等待200ms电机运行到指定角度、排球落到合适的击球点
+							if (xTaskGetTickCount() - xLastWakeTime >= xDelay200)
+									delay_tag = 7;
+							break;
+							
+					case 7: // 击球
+							RobStrite_Motor_Pos_control(&motor5, 24.0, 0.9); // 要确认正负
+							xLastWakeTime = xTaskGetTickCount();
+							delay_tag = 8;
+							break;
+					
+					case 8: // 等待200ms击球
+							if (xTaskGetTickCount() - xLastWakeTime >= xDelay200)
+									delay_tag = 9;
+							break;
+					case 9: // 击球板回原位
+							RobStrite_Motor_Pos_control(&motor5, 24.0, -0.7); 
+							delay_tag = 0;
+							break;
+					
 					default:
 							break;
       }
@@ -410,10 +451,13 @@ void gimbal(void const * argument)
 		}
 		else if (DBUS_decode_val.control_mode == 0)
 		{
-			delay_tag = 0;
-			motor_angle = 0.007;
-			motor_vec = 1;
-			RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
+			if(delay_tag != 0)
+			{		
+				delay_tag = 0;
+				motor_angle = 0.007;
+				motor_vec = 1;
+				RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
+			}
 		}
 	}
   /* USER CODE END gimbal */

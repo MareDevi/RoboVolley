@@ -192,6 +192,8 @@ void Buff_ReCf(void const * argument)
 			DBUS_decode_val.control_mode = 0; 
 			DBUS_decode_val.pitch = 0;		  
 			DBUS_decode_val.isenable = 0;
+			Disenable_Motor(&motor5, 0); 
+			osDelay(0);
 			Disenable_Motor(&motor4, 0); 
 			osDelay(0);
 			Disenable_Motor(&motor1, 0); 
@@ -213,7 +215,7 @@ void Buff_ReCf(void const * argument)
 			RobStrite_Motor_Init(&motor1, 0x01);
 			RobStrite_Motor_Init(&motor2, 0x02);
 			RobStrite_Motor_Init(&motor3, 0x03);
-			RobStrite_Motor_Init(&motor4, 0x05);
+			RobStrite_Motor_Init(&motor5, 0x05);
 
 			Set_RobStrite_Motor_parameter(&motor4, 0x7005, 5, Set_mode);
 			osDelay(2);

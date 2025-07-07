@@ -16,12 +16,12 @@ rocker[3]:锟斤拷锟斤拷前锟狡猴拷锟狡ｏ拷锟斤拷前锟斤拷锟斤拷锟斤拷锟斤拷
 */
 typedef struct
 {
-	int rocker[4];//摇锟斤拷
-	short sw[2];
+	int rocker[4];//摇杆
+	short sw[2];//sw[0]右边 = 1上位机, 2不动, 3遥控器， sw[1]左边 = 1, 2发球, 3垫球模式 ————1，2，3上下中
 	int roll;
 	int key;
 	int mod;
-	int control_mode;
+	int control_mode;//右边：0--啥都不动，1--手柄操控, 2上位机操控
 	double pitch;
 	int isenable;
 } DECODE_VAL;

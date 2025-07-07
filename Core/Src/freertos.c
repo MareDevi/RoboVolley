@@ -192,6 +192,8 @@ void Buff_ReCf(void const * argument)
 			DBUS_decode_val.control_mode = 0; 
 			DBUS_decode_val.pitch = 0;		  
 			DBUS_decode_val.isenable = 0;
+			Disenable_Motor(&motor5, 0); 
+			osDelay(0);
 			Disenable_Motor(&motor4, 0); 
 			osDelay(0);
 			Disenable_Motor(&motor1, 0); 
@@ -446,7 +448,7 @@ void gimbal(void const * argument)
 					
 					default:
 							break;
-      }
+			}
 			
 			if (DBUS_decode_val.roll >= 600 && delay_tag == 0)
 			{

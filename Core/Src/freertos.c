@@ -392,7 +392,7 @@ void gimbal(void const * argument)
 
 					default:
 							break;
-      }
+			}
 			
 			if (DBUS_decode_val.roll >= 600 && delay_tag == 0)
 			{

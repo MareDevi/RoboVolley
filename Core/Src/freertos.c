@@ -216,22 +216,22 @@ void Buff_ReCf(void const * argument)
 			}
 			Enable_Motor(&motor4);
 			osDelay(1);
-			for (int i=0; i<5; i++) { // 电机使能
+			for (int i=0; i<3; i++) { // 电机使能
 				if(i!=3) Set_ZeroPos(motors[i]);
 			}
 			DBUS_decode_val.pitch = 0;
 			pid_init();
 			//HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
 		}
-		if (DBUS_decode_val.control_mode != 0 && DBUS_decode_val.isenable == 0)
-		{
-			for (int i=0; i<3; i++) {
-				RobStrite_Motor_Pos_control(motors[i], 0.5, 0.02);
-			}
-			RobStrite_Motor_Pos_control(&motor5, 4.0, 0.0); // 要确认下正负
-			osDelay(2);
-			DBUS_decode_val.isenable = 1;
-		}
+//		if (DBUS_decode_val.control_mode != 0 && DBUS_decode_val.isenable == 0)
+//		{
+//			for (int i=0; i<3; i++) {
+//				RobStrite_Motor_Pos_control(motors[i], 0.5, 0.02);
+//			}
+//			RobStrite_Motor_Pos_control(&motor5, 4.0, 0.0); // 要确认下正负
+//			osDelay(2);
+//			DBUS_decode_val.isenable = 1;
+//		}
 		osDelay(10);
 		if (DBUS_decode_val.key == 1)
 		{
@@ -335,8 +335,8 @@ void gimbal(void const * argument)
 			DBUS_decode_val.pitch = (DBUS_decode_val.pitch > 0.1) ? 0.1 : ((DBUS_decode_val.pitch < -0.8) ? -0.8 : DBUS_decode_val.pitch);
 			//将遥控器值映射到pitch轴角度
 			
-			if(DBUS_decode_val.sw[1] == 3) // 初次进入对颠球模式将云台前倾,后续pitch受遥控器控制，发球板保持竖直不动
-			{
+			//if(DBUS_decode_val.sw[1] == 3) // 初次进入对颠球模式将云台前倾,后续pitch受遥控器控制，发球板保持竖直不动
+			//{
 				if(juggle == 0)
 				{
 					juggle = 1;
@@ -344,33 +344,33 @@ void gimbal(void const * argument)
 				}
 				shot_ball_angle = 0;
 				final_pitch = DBUS_decode_val.pitch;
-			}
+			//}
 
 			RobStrite_Motor_Pos_control(&motor4, motor_pitch_vec, final_pitch);
 			osDelay(1);
-			RobStrite_Motor_Pos_control(&motor5, 24.0, shot_ball_angle);
-			osDelay(1);
+//			RobStrite_Motor_Pos_control(&motor5, 24.0, shot_ball_angle);
+//			osDelay(1);
 			RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
 			osDelay(1);
 			switch (delay_tag) 
 			{
 					case 0: // 默认状态
-							if (DBUS_decode_val.sw[1] == 2) // 在发球模式默认状态在限位处
-							{
-									motor_angle = 0.007;
-									motor_vec = 4;
-									final_pitch = 0;
-									motor_pitch_vec = 2.0;
-									shot_ball_angle = -0.7;
-							} 
-							else if (DBUS_decode_val.sw[1] == 3) // 在对颠球模式默认状态比限位高一些
-							{
+//							if (DBUS_decode_val.sw[1] == 2) // 在发球模式默认状态在限位处
+//							{
+//									motor_angle = 0.007;
+//									motor_vec = 4;
+//									final_pitch = 0;
+//									motor_pitch_vec = 2.0;
+//									shot_ball_angle = -0.7;
+//							} 
+//							else if (DBUS_decode_val.sw[1] == 3) // 在对颠球模式默认状态比限位高一些
+//							{
 									motor_angle = 0.04;
 									motor_vec = 16;
 									final_pitch = 0;
 									motor_pitch_vec = 2.0;
 									shot_ball_angle = 0;
-							}
+//							}
 							break;
 
 					case 1: // 低速出限位一点
@@ -404,42 +404,42 @@ void gimbal(void const * argument)
 							}
 							break;
 							
-					case 5: // 回到发球默认状态并将云台向前倾一定角度，防止被发球板打到
-							motor_angle = 0.007;
-							motor_vec = 4;
-							final_pitch = -0.8;
-							motor_pitch_vec = 4.0;
-							xLastWakeTime = xTaskGetTickCount();
-							delay_tag = 6;
-							break;
-					
-					case 6: // 等待200ms电机运行到指定角度、排球落到合适的击球点
-							if (xTaskGetTickCount() - xLastWakeTime >= xDelay200)
-									delay_tag = 7;
-							break;
-							
-					case 7: // 击球
-							shot_ball_angle = 0.9; // 要确认正负
-							xLastWakeTime = xTaskGetTickCount();
-							delay_tag = 8;
-							break;
-					
-					case 8: // 等待75ms击球完成
-							if (xTaskGetTickCount() - xLastWakeTime >= xDelay75)
-									delay_tag = 9;
-							break;
-							
-					case 9: // 击球板回原位
-							shot_ball_angle = -0.7;
-							//final_pitch = 0;
-							xLastWakeTime = xTaskGetTickCount();
-							delay_tag = 10;
-							break;
-					
-					case 10: // 等待电机复位
-							if (xTaskGetTickCount() - xLastWakeTime >= xDelay1000)
-									delay_tag = 0;
-							break;
+//					case 5: // 回到发球默认状态并将云台向前倾一定角度，防止被发球板打到
+//							motor_angle = 0.007;
+//							motor_vec = 4;
+//							final_pitch = -0.8;
+//							motor_pitch_vec = 4.0;
+//							xLastWakeTime = xTaskGetTickCount();
+//							delay_tag = 6;
+//							break;
+//					
+//					case 6: // 等待200ms电机运行到指定角度、排球落到合适的击球点
+//							if (xTaskGetTickCount() - xLastWakeTime >= xDelay200)
+//									delay_tag = 7;
+//							break;
+//							
+//					case 7: // 击球
+//							shot_ball_angle = 0.9; // 要确认正负
+//							xLastWakeTime = xTaskGetTickCount();
+//							delay_tag = 8;
+//							break;
+//					
+//					case 8: // 等待75ms击球完成
+//							if (xTaskGetTickCount() - xLastWakeTime >= xDelay75)
+//									delay_tag = 9;
+//							break;
+//							
+//					case 9: // 击球板回原位
+//							shot_ball_angle = -0.7;
+//							//final_pitch = 0;
+//							xLastWakeTime = xTaskGetTickCount();
+//							delay_tag = 10;
+//							break;
+//					
+//					case 10: // 等待电机复位
+//							if (xTaskGetTickCount() - xLastWakeTime >= xDelay1000)
+//									delay_tag = 0;
+//							break;
 					
 					default:
 							break;

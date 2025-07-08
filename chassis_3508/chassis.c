@@ -25,7 +25,7 @@
 // 声明一个静态变量来保存目标航向角
 static double target_yaw = 0.0;
 static bool heading_lock_first_time = true;
-char uart1_tx_debug_data[300]; // 用于接收串口数据
+//char uart1_tx_debug_data[300]; // 用于接收串口数据
 
 // PID信息
 PID_typedef PID1;
@@ -361,8 +361,8 @@ void chassis_control_task(void)
 	double motor_out3 =
 		calculate_pid(&PID3, v_target3, motor_chassis[2].speed_rpm, false);
 
-	sprintf((char *)uart1_tx_debug_data, "%d,%d\n", (int)(v_target1 * 100), (int)(motor_chassis[0].speed_rpm * 100));
-	HAL_UART_Transmit_DMA(&huart1, (uint8_t *)uart1_tx_debug_data, strlen(uart1_tx_debug_data));
+//	sprintf((char *)uart1_tx_debug_data, "%d,%d\n", (int)(v_target1 * 100), (int)(motor_chassis[0].speed_rpm * 100));
+//	HAL_UART_Transmit_DMA(&huart1, (uint8_t *)uart1_tx_debug_data, strlen(uart1_tx_debug_data));
 
 	chassis_can_cmd(motor_out1, motor_out2, motor_out3);
 	HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);

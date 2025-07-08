@@ -3,15 +3,20 @@
 #include "crc.h"
 #include "bsp_buzzer.h"
 extern DMA_HandleTypeDef hdma_usart1_rx;
-uint8_t uart1_rx_buffer[26] =
-	{0xa5,0x10,0x00,0x00,0xd3,0x00,0x00
-	,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-	,0x00,0x98,0x1f};
-uint8_t uart1_tx_buffer[26] =
-	{0xa5,0x10,0x00,0x00,0xd3,0x00,0x00
-	,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-	,0x00,0x98,0x1f};
-	//0~6为固定位 7~10为X 11~14为Y 15~18为yaw 19~22为pitch 23为击球位 24~25为校验位
+uint8_t uart1_rx_buffer[19] =
+	{0x01,0x09,           // 帧头
+	 0x00,                // 击球 
+	 0x00,0x00,0x00,0x00, // x
+	 0x00,0x00,0x00,0x00, // y
+	 0x00,0x00,0x00,0x00, // yaw
+	 0x00,0x00,0x00,0x00};// pitch
+uint8_t uart1_tx_buffer[19] =
+	{0x01,0x09,
+	 0x00,
+	 0x00,0x00,0x00,0x00,
+	 0x00,0x00,0x00,0x00,
+	 0x00,0x00,0x00,0x00,
+	 0x00,0x00,0x00,0x00};
 possi_buff_typedef PossiBuffRcf;
 possi_buff_typedef PossiBuffSnd;
 
@@ -72,31 +77,21 @@ float be_bytes_to_float(const uint8_t bytes[4]) {
  * @return 错误状态码:
  *        0 = 成功
  *       -1 = 无效输入参数
- *       -2 = CRC8 校验失败
- *       -3 = CRC16 校验失败
  */
 int Rcf_decode(possi_buff_typedef *PossiBuffRcf, uint8_t *bytes) {
     if (!PossiBuffRcf || !bytes) return -1;
     
-    // CRC8 校验头（前4字节）
-    if (bytes[4] != Get_CRC8_Check_Sum(bytes, 4, CRC8_INIT)) {
-        return -2;
-    }
-    
-    // 使用现有函数进行CRC16校验
-    uint16_t crc_calc = Get_CRC16_Check_Sum(bytes, 24, CRC_INIT);
-    uint16_t crc_recv = (bytes[24] << 8) | bytes[25];
-    
-    if (crc_calc != crc_recv) {
-        return -3;
+    // 帧头校验（前2字节）
+    if (bytes[0] != 0x01 || bytes[1] != 0x09) {
+        return -1;
     }
     
     // 从字节数组中提取浮点数值
-    PossiBuffRcf->X       = be_bytes_to_float(&bytes[7]);
-    PossiBuffRcf->Y       = be_bytes_to_float(&bytes[11]);
-    PossiBuffRcf->Yaw     = be_bytes_to_float(&bytes[15]);
-    PossiBuffRcf->Pitch   = be_bytes_to_float(&bytes[19]);
-		PossiBuffRcf->Shot    = bytes[23];
+    PossiBuffRcf->X       = be_bytes_to_float(&bytes[3]);
+    PossiBuffRcf->Y       = be_bytes_to_float(&bytes[7]);
+    PossiBuffRcf->Yaw     = be_bytes_to_float(&bytes[11]);
+    PossiBuffRcf->Pitch   = be_bytes_to_float(&bytes[15]);
+		PossiBuffRcf->Shot    = bytes[2];
 		return 0;
 }
 
@@ -115,18 +110,13 @@ void Snd_code(possi_buff_typedef *PossiBuffSnd, uint8_t *bytes) {
     float_to_be_bytes(PossiBuffSnd->Y, y_bytes);
 		shot_bytes = PossiBuffSnd->Shot;
     
-    // 设置初始CRC校验
-    bytes[4] = Get_CRC8_Check_Sum(bytes, 4, CRC8_INIT);
+		bytes[0] = 0x01;
+		bytes[1] = 0x09;
     
     // 批量设置浮点数字节
-    memcpy(&bytes[7], pitch_bytes, 4);
-    memcpy(&bytes[11], x_bytes, 4);
-    memcpy(&bytes[15], y_bytes, 4);
-    memcpy(&bytes[19], yaw_bytes, 4);
-		bytes[23] = shot_bytes;
-    
-    // 计算并设置CRC16校验
-    uint16_t crc16 = Get_CRC16_Check_Sum(bytes, 24, CRC_INIT);
-    bytes[24] = (crc16 >> 8) & 0xFF;  // 存储高字节
-    bytes[25] = crc16 & 0xFF;         // 存储低字节
+    bytes[2] = shot_bytes;
+    memcpy(&bytes[3], x_bytes, 4);
+    memcpy(&bytes[7], y_bytes, 4);
+    memcpy(&bytes[11], yaw_bytes, 4);
+		memcpy(&bytes[15], pitch_bytes, 4);
 }

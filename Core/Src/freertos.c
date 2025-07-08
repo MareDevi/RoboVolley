@@ -180,6 +180,7 @@ void Buff_ReCf(void const * argument)
 	TickType_t xUpTime = xTaskGetTickCount();
 	static uint32_t buzzer_start_tick = 0;
 	HAL_UART_Receive_IT(&huart3, DBUS_buff, BUFF_LEN);
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
 	// HAL_UARTEx_ReceiveToIdle_IT(&huart3,DBUS_buff,sizeof(DBUS_buff));
 	while (1)
 	{
@@ -205,22 +206,22 @@ void Buff_ReCf(void const * argument)
 			DBUS_decode_val.control_mode = 0;
 			// 开电机
 
-			for (int i=0; i<5; i++) {
+			for (int i=0; i<5; i++) { // 电机初始化
         RobStrite_Motor_Init(motors[i], motor_ids[i]);
         osDelay(1); 
 			}
-			for (int i=0; i<5; i++) {
+			for (int i=0; i<5; i++) { // 电机设置位置模式
         Set_RobStrite_Motor_parameter(motors[i], 0x7005, 5, Set_mode);
 				osDelay(1);
 			}
 			Enable_Motor(&motor4);
 			osDelay(1);
-			for (int i=0; i<5; i++) {
-				if(i!=3)	Set_ZeroPos(motors[i]);
+			for (int i=0; i<5; i++) { // 电机使能
+				if(i!=3) Set_ZeroPos(motors[i]);
 			}
 			DBUS_decode_val.pitch = 0;
 			pid_init();
-			HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
+			//HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
 		}
 		if (DBUS_decode_val.control_mode != 0 && DBUS_decode_val.isenable == 0)
 		{
@@ -317,11 +318,13 @@ void gimbal(void const * argument)
 	const TickType_t xDelay75 = pdMS_TO_TICKS(75); // 75ms 转换为 tick
 	const TickType_t xDelay175 = pdMS_TO_TICKS(175); // 175ms 转换为 tick
 	const TickType_t xDelay200 = pdMS_TO_TICKS(200); // 200ms 转换为 tick
+	const TickType_t xDelay1000 = pdMS_TO_TICKS(1000); // 1000ms 转换为 tick
 	int delay_tag = 0;
 	int juggle = 0;
 	double motor_angle = 0.007;
 	double motor_vec = 1.0;
 	double final_pitch = 0.0;
+	double motor_pitch_vec = 2.0;
 	double shot_ball_angle = -0.7; // 要确认正负
 	
 	while (1)
@@ -343,7 +346,7 @@ void gimbal(void const * argument)
 				final_pitch = DBUS_decode_val.pitch;
 			}
 
-			RobStrite_Motor_Pos_control(&motor4, 4.0, final_pitch);
+			RobStrite_Motor_Pos_control(&motor4, motor_pitch_vec, final_pitch);
 			osDelay(1);
 			RobStrite_Motor_Pos_control(&motor5, 24.0, shot_ball_angle);
 			osDelay(1);
@@ -357,6 +360,7 @@ void gimbal(void const * argument)
 									motor_angle = 0.007;
 									motor_vec = 4;
 									final_pitch = 0;
+									motor_pitch_vec = 2.0;
 									shot_ball_angle = -0.7;
 							} 
 							else if (DBUS_decode_val.sw[1] == 3) // 在对颠球模式默认状态比限位高一些
@@ -364,6 +368,7 @@ void gimbal(void const * argument)
 									motor_angle = 0.04;
 									motor_vec = 16;
 									final_pitch = 0;
+									motor_pitch_vec = 2.0;
 									shot_ball_angle = 0;
 							}
 							break;
@@ -383,14 +388,14 @@ void gimbal(void const * argument)
 
 					case 3: // 高速击球
 							motor_angle = 0.57;
-							motor_vec = 24;
+							motor_vec = 8;
 							final_pitch = 0;
 							xLastWakeTime = xTaskGetTickCount();
 							delay_tag = 4;
 							break;
 
-					case 4: // 等待175ms电机运行到指定角度
-							if (xTaskGetTickCount() - xLastWakeTime >= xDelay175)
+					case 4: // 等待100ms电机运行到指定角度
+							if (xTaskGetTickCount() - xLastWakeTime >= xDelay1000)
 							{
 								if(DBUS_decode_val.sw[1] == 3) // 对颠球模式直接回默认状态
 									delay_tag = 0;  
@@ -403,6 +408,7 @@ void gimbal(void const * argument)
 							motor_angle = 0.007;
 							motor_vec = 4;
 							final_pitch = -0.8;
+							motor_pitch_vec = 4.0;
 							xLastWakeTime = xTaskGetTickCount();
 							delay_tag = 6;
 							break;
@@ -425,13 +431,13 @@ void gimbal(void const * argument)
 							
 					case 9: // 击球板回原位
 							shot_ball_angle = -0.7;
-							final_pitch = 0;
+							//final_pitch = 0;
 							xLastWakeTime = xTaskGetTickCount();
 							delay_tag = 10;
 							break;
 					
 					case 10: // 等待电机复位
-							if (xTaskGetTickCount() - xLastWakeTime >= xDelay200)
+							if (xTaskGetTickCount() - xLastWakeTime >= xDelay1000)
 									delay_tag = 0;
 							break;
 					
@@ -462,6 +468,7 @@ void gimbal(void const * argument)
 							motor_vec = 16;
 							final_pitch = 0;
 							shot_ball_angle = 0;
+							PossiBuffRcf.Shot = 0;
 							break;
 
 					case 1: // 低速出限位一点
@@ -469,6 +476,7 @@ void gimbal(void const * argument)
 							motor_vec = 1;
 							final_pitch = 0;
 							xLastWakeTime = xTaskGetTickCount();
+							PossiBuffRcf.Shot = 1;
 							delay_tag = 2;
 							break;
 
@@ -497,6 +505,7 @@ void gimbal(void const * argument)
 			if (PossiBuffRcf.Shot == 1 && delay_tag == 0)
 			{
 				delay_tag = 1;
+				PossiBuffRcf.Shot = 0;
 			}
 			osDelay(3);
 		}

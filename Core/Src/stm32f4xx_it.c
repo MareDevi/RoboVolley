@@ -22,6 +22,7 @@
 #include "stm32f4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "bsp_uart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -73,7 +74,8 @@ extern UART_HandleTypeDef huart6;
 extern TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN EV */
-
+extern TIM_HandleTypeDef htim5;
+uart_packet_t packet;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -292,8 +294,103 @@ void EXTI9_5_IRQHandler(void)
 void USART1_IRQHandler(void)
 {
   /* USER CODE BEGIN USART1_IRQn 0 */
+//  if (huart1.Instance->SR & UART_FLAG_RXNE) // 接收到数据//接受中断
+//    {
+//        __HAL_UART_CLEAR_PEFLAG(&huart1);
+//    }
+//    else if (USART1->SR & UART_FLAG_IDLE) // 空闲中断
+//    {
+//        static uint16_t this_time_rx_len = 0;
 
+//        __HAL_UART_CLEAR_PEFLAG(&huart1);
+
+//        if ((hdma_usart1_rx.Instance->CR & DMA_SxCR_CT) == RESET)
+//        {
+//            /* Current memory buffer used is Memory 0 */
+
+//            // disable DMA
+//            // 失效DMA
+//            __HAL_DMA_DISABLE(&hdma_usart1_rx);
+
+//            // get receive data length, length = set_data_length - remain_length
+//            // 获取接收数据长度,长度 = 设定长度 - 剩余长度
+//            this_time_rx_len = NUCINFO_RX_BUF_NUM - hdma_usart1_rx.Instance->NDTR;
+
+//            // reset set_data_lenght
+//            // 重新设定数据长度
+//            hdma_usart1_rx.Instance->NDTR = NUCINFO_RX_BUF_NUM;
+
+//            // set memory buffer 1
+//            // 设定缓冲1
+//            hdma_usart1_rx.Instance->CR |= DMA_SxCR_CT;
+
+//            // enable DMA
+//            // 使能DMA
+//            __HAL_DMA_ENABLE(&hdma_usart1_rx);
+
+//            if (this_time_rx_len == NUCINFO_FRAME_LENGTH)
+//            {
+////                if(buzzer_time++<3)
+////									buzzer_on(1,300);
+////								else
+////									buzzer_off();
+//								
+//                //sbus_to_nucCtrl(nucinfo_rx_buf[0], &GimbalRxMsg);
+//							uart_decode_packet(nucinfo_rx_buf[0],this_time_rx_len,&packet);
+//							  //usart_printf("receive\r\n");
+//                //usart_printf("%d,%d,%d,%f,%f,%f,%f\r\n",GimbalRxMsg.is_fire,GimbalRxMsg.is_spin,GimbalRxMsg.recognized,GimbalRxMsg.yaw.data,GimbalRxMsg.pitch.data,GimbalRxMsg.velocity_x.data,GimbalRxMsg.velocity_y.data);
+//            }
+//						else 
+//						{
+//							//usart_printf("length_fail:%d\r\n",this_time_rx_len);
+//						}
+//        }
+//        else
+//        {
+//            /* Current memory buffer used is Memory 1 */
+//            // disable DMA
+//            // 失效DMA
+//            __HAL_DMA_DISABLE(&hdma_usart1_rx);
+
+//            // get receive data length, length = set_data_length - remain_length
+//            // 获取接收数据长度,长度 = 设定长度 - 剩余长度
+//            this_time_rx_len = NUCINFO_RX_BUF_NUM - hdma_usart1_rx.Instance->NDTR;
+
+//            // reset set_data_lenght
+//            // 重新设定数据长度
+//            hdma_usart1_rx.Instance->NDTR = NUCINFO_RX_BUF_NUM;
+
+//            // set memory buffer 0
+//            // 设定缓冲??0
+//            DMA2_Stream5->CR &= ~(DMA_SxCR_CT);
+
+//            // enable DMA
+//            // 使能DMA
+//            __HAL_DMA_ENABLE(&hdma_usart1_rx);
+
+//            if (this_time_rx_len == NUCINFO_FRAME_LENGTH)
+//            {
+//                // 处理nuc传来的数
+//							//早期处理，通过闪灯检测是否
+//                //__HAL_TIM_SetCompare(&htim5, TIM_CHANNEL_1, 0x00000000);
+////								if(buzzer_time++<3)
+////										buzzer_on(1,300);
+////								else
+////									buzzer_off();
+//               // sbus_to_nucCtrl(nucinfo_rx_buf[1], &GimbalRxMsg);
+//							uart_decode_packet(nucinfo_rx_buf[1],this_time_rx_len,&packet);
+//							//usart_printf("receive2\r\n");
+//                //usart_printf("%d,%d,%d,%f,%f,%f,%f\r\n",GimbalRxMsg.is_fire,GimbalRxMsg.is_spin,GimbalRxMsg.recognized,GimbalRxMsg.yaw.data,GimbalRxMsg.pitch.data,GimbalRxMsg.velocity_x.data,GimbalRxMsg.velocity_y.data);
+//            }
+//						else 
+//						{
+//							//usart_printf("length_fail2:%d\r\n",this_time_rx_len);
+//							
+//						}
+//        }
+//    }
   /* USER CODE END USART1_IRQn 0 */
+	
   HAL_UART_IRQHandler(&huart1);
   /* USER CODE BEGIN USART1_IRQn 1 */
 

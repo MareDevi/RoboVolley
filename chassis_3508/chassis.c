@@ -31,7 +31,10 @@ static bool heading_lock_first_time = true;
 PID_typedef PID1;
 PID_typedef PID2;
 PID_typedef PID3;
+PID_typedef PID_pos_x;
+PID_typedef PID_pos_y;
 PID_typedef PID_yaw;					// <-- 新增：为Yaw轴角度闭环准备的PID
+
 motor_measure_t motor_chassis[3] = {0}; // 电机信息
 
 // 初始化滤波
@@ -215,6 +218,30 @@ void pid_init()
 	PID_yaw.out = 0;
 	PID_yaw.cur_error = 0;
 	PID_yaw.his_error = 0;
+	
+	PID_pos_x.kp = KP_P;
+	PID_pos_x.ki = KI_P;
+	PID_pos_x.kd = KD_P;
+	PID_pos_x.out_max = OUT_MAX_p ;
+	PID_pos_x.iout_max = IOUT_MAX_p;
+	PID_pos_x.pout = 0;
+	PID_pos_x.iout = 0;
+	PID_pos_x.dout = 0;
+	PID_pos_x.out = 0;
+	PID_pos_x.cur_error = 0;
+	PID_pos_x.his_error = 0;
+	
+	PID_pos_y.kp = KP_P;
+	PID_pos_y.ki = KI_P;
+	PID_pos_y.kd = KD_P;
+	PID_pos_y.out_max = OUT_MAX_p;
+	PID_pos_y.iout_max = IOUT_MAX_p;
+	PID_pos_y.pout = 0;
+	PID_pos_y.iout = 0;
+	PID_pos_y.dout = 0;
+	PID_pos_y.out = 0;
+	PID_pos_y.cur_error = 0;
+	PID_pos_y.his_error = 0;
 }
 
 double yaw;
@@ -387,4 +414,80 @@ void chassis_stop(void)
 	HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);
 	// 重置航向锁定状态
 	heading_lock_first_time = true;
+}
+/**
+* @brief 全场定位
+* @note 控制电机到达目标位置
+ */
+void chassis_navi(float x_now,float y_now ,float x_tar,float y_tar)
+{   
+	//位置环
+	double motor_out_x = calculate_pid(&PID_pos_x,x_tar,x_now,false);
+	double motor_out_y = calculate_pid(&PID_pos_y,y_tar,y_now,false);
+	
+	// 计算Yaw轴修正
+	double current_yaw =
+		-get_INS_angle_point()[0]; // 获取当前航向角，与之前保持一致
+	yaw = current_yaw;
+	double yaw_correction_speed = 0.0;
+	//
+	if (heading_lock_first_time)
+		{
+			target_yaw = current_yaw;
+			heading_lock_first_time = false;
+		}
+	// 计算角度误差
+		double yaw_error = target_yaw - current_yaw;
+
+		while (yaw_error > 3.14159265)
+			yaw_error -= 2 * 3.14159265;
+		while (yaw_error < -3.14159265)
+			yaw_error += 2 * 3.14159265;
+	
+	// 添加角度死区，避免在静止时持续修正微小误差
+		if (fabs(yaw_error) > 0.05) // 角度死区：约3度（假设单位是弧度）
+		{
+			// 使用通用PID计算函数来计算修正速度
+			yaw_correction_speed =
+				calculate_pid(&PID_yaw, 0, -yaw_error, false);
+
+			// 限制修正速度的幅度，避免过大的修正
+			if (yaw_correction_speed > 50)
+				yaw_correction_speed = 50;
+			if (yaw_correction_speed < -50)
+				yaw_correction_speed = -50;
+		}
+		else
+		{
+			// 在死区内，不进行修正，并清除PID积分项
+			yaw_correction_speed = 0.0;
+			PID_yaw.iout = 0; // 清除积分项，防止累积
+		}
+   
+	double vx_tar = motor_out_x; // 前后速度
+	double vy_tar = motor_out_y; // 左右速度
+    double vz_tar= yaw_correction_speed;
+	
+	// 4. 逆运动学解算
+	// 使用 vx_in, vy_in, vz_final 计算三个轮子的目标速度
+	double v_target1 = (vx_tar * 0.667+ yaw_correction_speed * 0.333) * SPEED_SCALE;
+	double v_target2 = (vx_tar * 0.333 +vy_tar * 0.577+ yaw_correction_speed * 0.333 ) * SPEED_SCALE;
+	double v_target3 = (vx_tar * 0.333 - vy_tar * 0.577+ yaw_correction_speed * 0.333 ) * SPEED_SCALE;
+
+	// 全局变量v1,v2,v3用于调试，可以保留
+	v1 = v_target1;
+	v2 = v_target2;
+	v3 = v_target3;
+
+	// 5. 执行各电机速度PID并发送CAN指令
+	double motor_out1 =
+		calculate_pid(&PID1, v_target1, motor_chassis[0].speed_rpm, false);
+	double motor_out2 =
+		calculate_pid(&PID2, v_target2, motor_chassis[1].speed_rpm, false);
+	double motor_out3 =
+		calculate_pid(&PID3, v_target3, motor_chassis[2].speed_rpm, false);
+
+	chassis_can_cmd(motor_out1, motor_out2, motor_out3);
+	HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);
+	
 }

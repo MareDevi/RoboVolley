@@ -71,11 +71,11 @@ void chassis_task(void const *argument)
             // 调用新的、集中的底盘控制函数
             chassis_control_task(); 
         }
-        // 模式2: 停止/刹车模式
+        // 模式2: 上位机控制模式
         else if (DBUS_decode_val.control_mode == 2)
-        {
-            // 调用新的刹车函数
-            chassis_stop();
+			{   //前两个参数为从全场定位读的当前值，后两个参数为上位机发送的目标值
+            //chassis_navi(
+            //chassis_stop();
         }
         // 模式3 (或其他): 完全断电/失能模式
         else

@@ -2,8 +2,11 @@
 #include "usart.h"
 #include "crc.h"
 #include "bsp_buzzer.h"
+#include "hchassis.h"
+#include <stdio.h>
 extern DMA_HandleTypeDef hdma_usart1_rx;
 extern DMA_HandleTypeDef hdma_usart6_rx;
+uint8_t nucinfo_rx_buf[2][NUCINFO_RX_BUF_NUM];  // 双缓冲区数组
 uint8_t uart1_rx_buffer[MAP_LEN];
 uint8_t uart6_rx_buffer[MESSAGE_LEN] =
 	{0x01,0x09,           // 帧头
@@ -21,8 +24,8 @@ uint8_t uart6_tx_buffer[MESSAGE_LEN] =
 	 0x00,0x00,0x00,0x00};
 possi_buff_typedef PossiBuffRcf;
 possi_buff_typedef PossiBuffSnd;
-map_buff_typedef MapBuffRcf;
-	 
+//map_buff_typedef MapBuffRcf;
+extern uart_packet_t packet;	 
 void uart1_init(void)
 {
 	HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
@@ -47,7 +50,8 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) //DMA
 	}
 	else if(huart == &huart1)
 	{
-		Map_decode(&MapBuffRcf, uart1_rx_buffer);
+		//Map_decode(&MapBuffRcf, uart1_rx_buffer);
+		uart_decode_packet(uart1_rx_buffer,20,&packet);
 		HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
 		__HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
 	}
@@ -134,10 +138,34 @@ void Snd_code(possi_buff_typedef *PossiBuffSnd, uint8_t *bytes) {
     memcpy(&bytes[11], yaw_bytes, 4);
 		memcpy(&bytes[15], pitch_bytes, 4);
 }
+Position position;
+int uart_decode_packet(uint8_t *buf, uint16_t len, uart_packet_t *packet) {
+    if (len < UART_HEADER_LEN + 1 + UART_CRC16_LEN) return -1; // 长度不足
 
-void Map_decode(map_buff_typedef *MapBuffRcf, uint8_t *bytes){
-	//不知道数据怎么传的，暂时随便写的
-		MapBuffRcf->X   = be_bytes_to_float(&bytes[0]);
-		MapBuffRcf->Y   = be_bytes_to_float(&bytes[4]);
-		MapBuffRcf->Yaw = be_bytes_to_float(&bytes[8]);
+    // 1. 检查SOF
+    if (buf[0] != 0xA5 || buf[1] != 0x5A) return -2;
+
+    // 2. 检查length
+    uint8_t data_len = buf[2];
+    if (len != UART_HEADER_LEN + 1 + data_len + UART_CRC16_LEN) return -3;
+
+    // 3. 检查header crc8
+    if (Verify_CRC8_Check_Sum(buf, UART_HEADER_LEN) == 0) return -4;
+
+    // 4. 检查crc16
+    if (Verify_CRC16_Check_Sum(buf, len) == 0) return -5;
+
+    // 5. 提取cmd_id和data
+    packet->cmd_id = buf[UART_HEADER_LEN];
+    packet->data = (uint8_t *)&buf[UART_HEADER_LEN + 1];
+    packet->data_len = data_len;
+	  printf("decode_success\r\n");
+        memcpy(&position.world_x, &packet->data[0], sizeof(float));
+        memcpy(&position.world_y, &packet->data[4], sizeof(float));
+        memcpy(&position.world_yaw, &packet->data[8], sizeof(float));
+		chassis_can_cmd(position.world_x,position.world_y,position.world_yaw);
+	 printf("positon:%.2f,%.2f,%.2f\r\n",position.world_x,position.world_y,position.world_yaw);
+	// HAL_UART_Transmit(&huart6,position.world_x,sizeof(position.world_x),100);
+	 //HAL_UART_Transmit(&huart6,position.world_x,sizeof(position.world_x),100);
+    return 0; // 成功
 }

@@ -47,6 +47,10 @@ CAN_TxHeaderTypeDef txmsg;
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+#include "stdio.h"
+#include "main.h"
+
+
 
 /* USER CODE END PM */
 
@@ -131,7 +135,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
+printf("System started!\r\n");
+	  HAL_Delay(100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

@@ -23,30 +23,6 @@ typedef struct
 	
 }possi_buff_typedef;
 
-typedef struct
-{
-	float X;
-	float Y;
-	float Yaw;
-}map_buff_typedef;
-
-extern possi_buff_typedef PossiBuffRcf;
-extern possi_buff_typedef PossiBuffSnd;
-extern uint8_t uart1_rx_buffer[MAP_LEN];
-extern uint8_t uart1_tx_buffer[MAP_LEN];
-extern uint8_t uart6_rx_buffer[MESSAGE_LEN];
-extern uint8_t uart6_tx_buffer[MESSAGE_LEN];
-
-void uart1_init(void);
-void uart6_init(void);
-
-int Rcf_decode(possi_buff_typedef *PossiBuffRcf, uint8_t *bytes);
-
-void Snd_code(possi_buff_typedef *PossiBuffSnd, uint8_t *bytes);
-
-
-
-
 typedef struct {
     float world_x;
     float world_y;
@@ -61,5 +37,19 @@ typedef struct {
     uint8_t data_len;         // 数据长度
 } uart_packet_t;
 int uart_decode_packet(uint8_t *buf, uint16_t len, uart_packet_t *packet);
+
+extern possi_buff_typedef PossiBuffRcf;
+extern possi_buff_typedef PossiBuffSnd;
+extern uint8_t uart1_rx_buffer[MAP_LEN];
+extern uint8_t uart1_tx_buffer[MAP_LEN];
+extern uint8_t uart6_rx_buffer[MESSAGE_LEN];
+extern uint8_t uart6_tx_buffer[MESSAGE_LEN];
+extern Position position;
+void uart1_init(void);
+void uart6_init(void);
+
+int Rcf_decode(possi_buff_typedef *PossiBuffRcf, uint8_t *bytes);
+
+void Snd_code(possi_buff_typedef *PossiBuffSnd, uint8_t *bytes);
 
 #endif

@@ -3,7 +3,7 @@
 #include "cmsis_os.h"
 #include "hchassis.h"
 #include "hDBUS.h"
-
+#include "bsp_uart.h"
 #include "usart.h"
 #include <stdio.h>
 
@@ -74,7 +74,7 @@ void chassis_task(void const *argument)
         // 模式2: 上位机控制模式
         else if (DBUS_decode_val.control_mode == 2)
 			{   //前两个参数为从全场定位读的当前值，后两个参数为上位机发送的目标值
-            //chassis_navi(position.world_x,position.world_y
+            chassis_navi(position.world_x, position.world_y, PossiBuffRcf.X, PossiBuffRcf.Y);
             //chassis_stop();
         }
         // 模式3 (或其他): 完全断电/失能模式

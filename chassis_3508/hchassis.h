@@ -60,9 +60,10 @@ void chassis_control_task(void);
 void chassis_stop(void);
 // 关闭电机断电
 void shut_up(void);
-
 // 清除数值
 void val_clear(void);
+// 位置环控制
+void chassis_navi(float x_now,float y_now ,float x_tar,float y_tar);
 
 // 已弃用的单独电机PID函数声明（已在chassis.c中注释掉）
 // double chassis_motor_1_pid(void);

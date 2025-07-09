@@ -159,13 +159,16 @@ int uart_decode_packet(uint8_t *buf, uint16_t len, uart_packet_t *packet) {
     packet->cmd_id = buf[UART_HEADER_LEN];
     packet->data = (uint8_t *)&buf[UART_HEADER_LEN + 1];
     packet->data_len = data_len;
-	  printf("decode_success\r\n");
-        memcpy(&position.world_x, &packet->data[0], sizeof(float));
-        memcpy(&position.world_y, &packet->data[4], sizeof(float));
-        memcpy(&position.world_yaw, &packet->data[8], sizeof(float));
-		chassis_can_cmd(position.world_x,position.world_y,position.world_yaw);
-	 printf("positon:%.2f,%.2f,%.2f\r\n",position.world_x,position.world_y,position.world_yaw);
-	// HAL_UART_Transmit(&huart6,position.world_x,sizeof(position.world_x),100);
-	 //HAL_UART_Transmit(&huart6,position.world_x,sizeof(position.world_x),100);
+	  //printf("decode_success\r\n");
+		memcpy(&position.world_x, &packet->data[0], sizeof(float));
+		memcpy(&position.world_y, &packet->data[4], sizeof(float));
+		memcpy(&position.world_yaw, &packet->data[8], sizeof(float));
+		PossiBuffSnd.X   = position.world_x;
+		PossiBuffSnd.Y   = position.world_y;
+		//PossiBuffSnd.Yaw = position.world_yaw;
+		//chassis_can_cmd(position.world_x,position.world_y,position.world_yaw);
+	  //printf("positon:%.2f,%.2f,%.2f\r\n",position.world_x,position.world_y,position.world_yaw);
+	  //HAL_UART_Transmit(&huart6,position.world_x,sizeof(position.world_x),100);
+	  //HAL_UART_Transmit(&huart6,position.world_x,sizeof(position.world_x),100);
     return 0; // 成功
 }

@@ -315,14 +315,14 @@ void gimbal(void const * argument)
 {
   /* USER CODE BEGIN gimbal */
 	/* Infinite loop */
-	TickType_t xLastWakeTime = xTaskGetTickCount();
+	TickType_t xLastWakeTime = xTaskGetTickCount();// 获取当前的 tick 计数
 	const TickType_t xDelay25 = pdMS_TO_TICKS(25); // 25ms 转换为 tick
 	const TickType_t xDelay75 = pdMS_TO_TICKS(75); // 75ms 转换为 tick
 	const TickType_t xDelay175 = pdMS_TO_TICKS(175); // 175ms 转换为 tick
 	const TickType_t xDelay200 = pdMS_TO_TICKS(200); // 200ms 转换为 tick
 	const TickType_t xDelay1000 = pdMS_TO_TICKS(1000); // 1000ms 转换为 tick
-	int delay_tag = 0;
-	int juggle = 0;
+	int delay_tag = 0;// 状态机标志位
+	int juggle = 0;//初次进入对颠球模式标志位，将云台前倾,后续pitch受遥控器控制，发球板保持竖直不动
 	double motor_angle = 0.007;
 	double motor_vec = 1.0;
 	double final_pitch = 0.0;
@@ -359,7 +359,7 @@ void gimbal(void const * argument)
 					case 0: // 默认状态
 							if (DBUS_decode_val.sw[1] == 2) // 在发球模式默认状态在限位处
 							{
-									motor_angle = 0.007;
+									motor_angle = 0.007;//发球模式最低限位，为了伸出三根立柱，稳定球
 									motor_vec = 4;
 									final_pitch = 0;
 									motor_pitch_vec = 2.0;
@@ -367,7 +367,7 @@ void gimbal(void const * argument)
 							} 
 							else if (DBUS_decode_val.sw[1] == 3) // 在对颠球模式默认状态比限位高一些
 							{
-									motor_angle = 0.04;
+									motor_angle = 0.04;//板恰好高出三个立柱
 									motor_vec = 16;
 									final_pitch = 0;
 									motor_pitch_vec = 2.0;
@@ -375,7 +375,7 @@ void gimbal(void const * argument)
 							}
 							break;
 
-					case 1: // 低速出限位一点
+					case 1: // 低速出限位一点，在后续的拨杆拨下程度判断逻辑中让他进入delay_tag>0的发球状态
 							motor_angle = 0.04;
 							motor_vec = 1;
 							final_pitch = 0;

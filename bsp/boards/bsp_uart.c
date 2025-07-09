@@ -3,14 +3,16 @@
 #include "crc.h"
 #include "bsp_buzzer.h"
 extern DMA_HandleTypeDef hdma_usart1_rx;
-uint8_t uart1_rx_buffer[19] =
+extern DMA_HandleTypeDef hdma_usart6_rx;
+uint8_t uart1_rx_buffer[MAP_LEN];
+uint8_t uart6_rx_buffer[MESSAGE_LEN] =
 	{0x01,0x09,           // 帧头
 	 0x00,                // 击球 
 	 0x00,0x00,0x00,0x00, // x
 	 0x00,0x00,0x00,0x00, // y
 	 0x00,0x00,0x00,0x00, // yaw
 	 0x00,0x00,0x00,0x00};// pitch
-uint8_t uart1_tx_buffer[19] =
+uint8_t uart6_tx_buffer[MESSAGE_LEN] =
 	{0x01,0x09,
 	 0x00,
 	 0x00,0x00,0x00,0x00,
@@ -19,21 +21,33 @@ uint8_t uart1_tx_buffer[19] =
 	 0x00,0x00,0x00,0x00};
 possi_buff_typedef PossiBuffRcf;
 possi_buff_typedef PossiBuffSnd;
-
+map_buff_typedef MapBuffRcf;
+	 
 void uart1_init(void)
 {
 	HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
 	__HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
 }	
+void uart6_init(void)
+{
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart6, uart6_rx_buffer, sizeof(uart6_rx_buffer));
+	__HAL_DMA_DISABLE_IT(&hdma_usart6_rx, DMA_IT_HT);
+}	
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) //DMA
 {
-	if(huart == &huart1)
+	if(huart == &huart6)
 	{
-		int receive_error = Rcf_decode(&PossiBuffRcf, uart1_rx_buffer);
-		Snd_code(&PossiBuffSnd, uart1_tx_buffer);
-		HAL_UART_Transmit_DMA(&huart1, uart1_tx_buffer, Size);
+		int receive_error = Rcf_decode(&PossiBuffRcf, uart6_rx_buffer);
+		Snd_code(&PossiBuffSnd, uart6_tx_buffer);
+		HAL_UART_Transmit_DMA(&huart6, uart6_tx_buffer, Size);
 		
+		HAL_UARTEx_ReceiveToIdle_DMA(&huart6, uart6_rx_buffer, sizeof(uart6_rx_buffer));
+		__HAL_DMA_DISABLE_IT(&hdma_usart6_rx, DMA_IT_HT);
+	}
+	else if(huart == &huart1)
+	{
+		Map_decode(&MapBuffRcf, uart1_rx_buffer);
 		HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
 		__HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
 	}
@@ -87,11 +101,11 @@ int Rcf_decode(possi_buff_typedef *PossiBuffRcf, uint8_t *bytes) {
     }
     
     // 从字节数组中提取浮点数值
+		PossiBuffRcf->Shot    = bytes[2];
     PossiBuffRcf->X       = be_bytes_to_float(&bytes[3]);
     PossiBuffRcf->Y       = be_bytes_to_float(&bytes[7]);
     PossiBuffRcf->Yaw     = be_bytes_to_float(&bytes[11]);
     PossiBuffRcf->Pitch   = be_bytes_to_float(&bytes[15]);
-		PossiBuffRcf->Shot    = bytes[2];
 		return 0;
 }
 
@@ -119,4 +133,11 @@ void Snd_code(possi_buff_typedef *PossiBuffSnd, uint8_t *bytes) {
     memcpy(&bytes[7], y_bytes, 4);
     memcpy(&bytes[11], yaw_bytes, 4);
 		memcpy(&bytes[15], pitch_bytes, 4);
+}
+
+void Map_decode(map_buff_typedef *MapBuffRcf, uint8_t *bytes){
+	//不知道数据怎么传的，暂时随便写的
+		MapBuffRcf->X   = be_bytes_to_float(&bytes[0]);
+		MapBuffRcf->Y   = be_bytes_to_float(&bytes[4]);
+		MapBuffRcf->Yaw = be_bytes_to_float(&bytes[8]);
 }

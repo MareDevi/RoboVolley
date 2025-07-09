@@ -122,7 +122,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityIdle, 0, 128);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of Rcontrol */
@@ -130,7 +130,7 @@ void MX_FREERTOS_Init(void) {
   RcontrolHandle = osThreadCreate(osThread(Rcontrol), NULL);
 
   /* definition and creation of gimbalTask */
-  osThreadDef(gimbalTask, gimbal, osPriorityIdle, 0, 128);
+  osThreadDef(gimbalTask, gimbal, osPriorityAboveNormal, 0, 128);
   gimbalTaskHandle = osThreadCreate(osThread(gimbalTask), NULL);
 
   /* definition and creation of chassisTask */
@@ -181,6 +181,7 @@ void Buff_ReCf(void const * argument)
 	static uint32_t buzzer_start_tick = 0;
 	HAL_UART_Receive_IT(&huart3, DBUS_buff, BUFF_LEN);
 	HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart6, uart6_rx_buffer, sizeof(uart6_rx_buffer));
 	// HAL_UARTEx_ReceiveToIdle_IT(&huart3,DBUS_buff,sizeof(DBUS_buff));
 	while (1)
 	{
@@ -195,7 +196,7 @@ void Buff_ReCf(void const * argument)
 			DBUS_decode_val.pitch = 0;		  
 			DBUS_decode_val.isenable = 0;
 			
-			for (int i=0; i<5; i++) {
+			for (int i=0; i<4; i++) {
         Disenable_Motor(motors[i], 0); 
 				osDelay(0);
 			}
@@ -206,18 +207,18 @@ void Buff_ReCf(void const * argument)
 			DBUS_decode_val.control_mode = 0;
 			// 开电机
 
-			for (int i=0; i<5; i++) { // 电机初始化
+			for (int i=0; i<4; i++) { // 电机初始化
         RobStrite_Motor_Init(motors[i], motor_ids[i]);
         osDelay(1); 
 			}
-			for (int i=0; i<5; i++) { // 电机设置位置模式
+			for (int i=0; i<4; i++) { // 电机设置位置模式
         Set_RobStrite_Motor_parameter(motors[i], 0x7005, 5, Set_mode);
 				osDelay(1);
 			}
 			Enable_Motor(&motor4);
 			osDelay(1);
-			for (int i=0; i<5; i++) { // 电机使能
-				if(i!=3) Set_ZeroPos(motors[i]);
+			for (int i=0; i<3; i++) { // 电机使能
+				Set_ZeroPos(motors[i]);
 			}
 			DBUS_decode_val.pitch = 0;
 			pid_init();
@@ -457,8 +458,8 @@ void gimbal(void const * argument)
 			shot_ball_angle = 0;
 			RobStrite_Motor_Pos_control(&motor4, 4.0, final_pitch);
 			osDelay(1);
-			RobStrite_Motor_Pos_control(&motor5, 1.0, shot_ball_angle);
-			osDelay(1);
+//			RobStrite_Motor_Pos_control(&motor5, 1.0, shot_ball_angle);
+//			osDelay(1);
 			RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
 			osDelay(1);
 			switch (delay_tag) 
@@ -505,7 +506,7 @@ void gimbal(void const * argument)
 			if (PossiBuffRcf.Shot == 1 && delay_tag == 0)
 			{
 				delay_tag = 1;
-				PossiBuffRcf.Shot = 0;
+				//PossiBuffRcf.Shot = 0;
 			}
 			osDelay(3);
 		}

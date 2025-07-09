@@ -196,7 +196,7 @@ void Buff_ReCf(void const * argument)
 			DBUS_decode_val.pitch = 0;		  
 			DBUS_decode_val.isenable = 0;
 			
-			for (int i=0; i<4; i++) {
+			for (int i=0; i<5; i++) {
         Disenable_Motor(motors[i], 0); 
 				osDelay(0);
 			}
@@ -207,18 +207,19 @@ void Buff_ReCf(void const * argument)
 			DBUS_decode_val.control_mode = 0;
 			// 开电机
 
-			for (int i=0; i<4; i++) { // 电机初始化
+			for (int i=0; i<5; i++) { // 电机初始化
         RobStrite_Motor_Init(motors[i], motor_ids[i]);
         osDelay(1); 
 			}
-			for (int i=0; i<4; i++) { // 电机设置位置模式
+			for (int i=0; i<5; i++) { // 电机设置位置模式
         Set_RobStrite_Motor_parameter(motors[i], 0x7005, 5, Set_mode);
 				osDelay(1);
 			}
 			Enable_Motor(&motor4);
 			osDelay(1);
-			for (int i=0; i<3; i++) { // 电机使能
-				Set_ZeroPos(motors[i]);
+			for (int i=0; i<5; i++) { // 电机使能
+				if(i != 3)
+					Set_ZeroPos(motors[i]);
 			}
 			DBUS_decode_val.pitch = 0;
 			pid_init();

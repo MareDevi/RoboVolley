@@ -327,7 +327,7 @@ void gimbal(void const * argument)
 	double motor_vec = 1.0;
 	double final_pitch = 0.0;
 	double motor_pitch_vec = 2.0;
-	double shot_ball_angle = -0.7; // 要确认正负
+	double shot_ball_angle = 0.4; // 要确认正负
 	
 	while (1)
 	{
@@ -363,7 +363,7 @@ void gimbal(void const * argument)
 									motor_vec = 4;
 									final_pitch = 0;
 									motor_pitch_vec = 2.0;
-									shot_ball_angle = -0.7;
+									shot_ball_angle = 0.4;
 							} 
 							else if (DBUS_decode_val.sw[1] == 3) // 在对颠球模式默认状态比限位高一些
 							{
@@ -421,7 +421,7 @@ void gimbal(void const * argument)
 							break;
 							
 					case 7: // 击球
-							shot_ball_angle = 0.9; // 要确认正负
+							shot_ball_angle = -1.0; // 要确认正负
 							xLastWakeTime = xTaskGetTickCount();
 							delay_tag = 8;
 							break;
@@ -432,7 +432,7 @@ void gimbal(void const * argument)
 							break;
 							
 					case 9: // 击球板回原位
-							shot_ball_angle = -0.7;
+							shot_ball_angle = 0.4;
 							//final_pitch = 0;
 							xLastWakeTime = xTaskGetTickCount();
 							delay_tag = 10;

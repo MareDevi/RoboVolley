@@ -451,11 +451,11 @@ void chassis_navi(float x_now,float y_now ,float x_tar,float y_tar)
 			yaw_correction_speed =
 				calculate_pid(&PID_yaw, 0, -yaw_error, false);
 
-			// 限制修正速度的幅度，避免过大的修正
-			if (yaw_correction_speed > 50)
-				yaw_correction_speed = 50;
-			if (yaw_correction_speed < -50)
-				yaw_correction_speed = -50;
+			// // 限制修正速度的幅度，避免过大的修正
+			// if (yaw_correction_speed > 50)
+			// 	yaw_correction_speed = 50;
+			// if (yaw_correction_speed < -50)
+			// 	yaw_correction_speed = -50;
 		}
 		else
 		{

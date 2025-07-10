@@ -320,6 +320,7 @@ void gimbal(void const * argument)
 	const TickType_t xDelay75 = pdMS_TO_TICKS(75); // 75ms 转换为 tick
 	const TickType_t xDelay175 = pdMS_TO_TICKS(175); // 175ms 转换为 tick
 	const TickType_t xDelay200 = pdMS_TO_TICKS(200); // 200ms 转换为 tick
+	const TickType_t xDelay500 = pdMS_TO_TICKS(500); // 200ms 转换为 tick
 	const TickType_t xDelay1000 = pdMS_TO_TICKS(1000); // 1000ms 转换为 tick
 	int delay_tag = 0;// 状态机标志位
 	int juggle = 0;//初次进入对颠球模式标志位，将云台前倾,后续pitch受遥控器控制，发球板保持竖直不动
@@ -350,7 +351,7 @@ void gimbal(void const * argument)
 
 			RobStrite_Motor_Pos_control(&motor4, motor_pitch_vec, final_pitch);
 			osDelay(1);
-			RobStrite_Motor_Pos_control(&motor5, 24.0, shot_ball_angle);
+			RobStrite_Motor_Pos_control(&motor5, 8.0, shot_ball_angle);
 			osDelay(1);
 			RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
 			osDelay(1);
@@ -390,14 +391,14 @@ void gimbal(void const * argument)
 
 					case 3: // 高速击球
 							motor_angle = 0.57;
-							motor_vec = 8;
+							motor_vec = 12;
 							final_pitch = 0;
 							xLastWakeTime = xTaskGetTickCount();
 							delay_tag = 4;
 							break;
 
 					case 4: // 等待100ms电机运行到指定角度
-							if (xTaskGetTickCount() - xLastWakeTime >= xDelay1000)
+							if (xTaskGetTickCount() - xLastWakeTime >= xDelay200)
 							{
 								if(DBUS_decode_val.sw[1] == 3) // 对颠球模式直接回默认状态
 									delay_tag = 0;  
@@ -408,15 +409,15 @@ void gimbal(void const * argument)
 							
 					case 5: // 回到发球默认状态并将云台向前倾一定角度，防止被发球板打到
 							motor_angle = 0.007;
-							motor_vec = 4;
+							motor_vec = 6;
 							final_pitch = -0.8;
 							motor_pitch_vec = 4.0;
 							xLastWakeTime = xTaskGetTickCount();
 							delay_tag = 6;
 							break;
 					
-					case 6: // 等待200ms电机运行到指定角度、排球落到合适的击球点
-							if (xTaskGetTickCount() - xLastWakeTime >= xDelay200)
+					case 6: // 等待500ms电机运行到指定角度、排球落到合适的击球点
+							if (xTaskGetTickCount() - xLastWakeTime >= xDelay500)
 									delay_tag = 7;
 							break;
 							
@@ -427,7 +428,7 @@ void gimbal(void const * argument)
 							break;
 					
 					case 8: // 等待75ms击球完成
-							if (xTaskGetTickCount() - xLastWakeTime >= xDelay75)
+							if (xTaskGetTickCount() - xLastWakeTime >= xDelay75 * 2)
 									delay_tag = 9;
 							break;
 							

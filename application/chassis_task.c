@@ -5,7 +5,7 @@
 #include "hDBUS.h"
 #include "bsp_uart.h"
 #include "usart.h"
-#include <stdio.h>
+// #include <stdio.h>
 
 // 底盘控制任务
 // void chassis_task(void const *argument)

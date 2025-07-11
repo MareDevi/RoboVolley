@@ -11,6 +11,7 @@
 #include "usart.h"
 #include "stdio.h"
 #include "string.h"
+#include<math.h>
 
 #define CAN_CHASSIS_ALL_ID 0x200
 #define CAN_3508_M1_ID 0x201
@@ -296,6 +297,56 @@ static double calculate_pid(PID_typedef *pid, double target_val,
 	return pid->out;
 }
 
+static double calculate_pid_position(PID_typedef *pid, double target_val,
+							double current_val, float delta_val,bool is_stop_mode)
+{
+	pid->his_error = pid->cur_error;
+	pid->cur_error = delta_val;
+
+	// 使用结构体中的PID参数，而不是全局常量
+	pid->pout = pid->kp * pid->cur_error;
+	pid->iout += pid->ki * pid->cur_error;
+	pid->dout = pid->kd * (pid->cur_error - pid->his_error);
+
+	// 积分限幅 - 使用结构体中的限制值
+	pid->iout = ((pid->iout > pid->iout_max) ? pid->iout_max : pid->iout);
+	pid->iout = ((pid->iout < -pid->iout_max) ? -pid->iout_max : pid->iout);
+
+	// 积分清零条件
+	if (is_stop_mode)
+	{
+		// 停止模式：当目标为0且电机速度很小时，清除积分项
+		if (target_val == 0 && fabs(current_val) < 5.0)
+		{
+			pid->iout = 0;
+		}
+	}
+	else
+	{
+		// 正常模式：当目标和当前都为0时，清除积分项
+		if (target_val == 0 && current_val == 0 && pid->cur_error == 0)
+		{
+			pid->iout = 0;
+		}
+	}
+
+	// 输出死区（仅在停止模式下）
+	if (is_stop_mode && fabs(pid->cur_error) < 5.0)
+	{
+		pid->out = 0;
+	}
+	else
+	{
+		pid->out = pid->pout + pid->iout + pid->dout;
+	}
+
+	// 输出限幅 - 使用结构体中的限制值
+	pid->out = ((pid->out > pid->out_max) ? pid->out_max : pid->out);
+	pid->out = ((pid->out < -pid->out_max) ? -pid->out_max : pid->out);
+
+	return pid->out;
+}
+
 double v1, v2, v3, yaw_er; // 调试用
 
 /**
@@ -491,14 +542,41 @@ void chassis_navi(float x_now,float y_now ,float x_tar,float y_tar)
 	
 }
 
+float Q_rsqrt( float number )  
+{  
+   long i;  
+   float x2, y;  
+   const float threehalfs = 1.5F;  
+ 
+   x2 = number * 0.5F;  
+   y  = number;  
+   i  = * ( long * ) &y;                       // evil floating point bit level hacking  
+   i  = 0x5f3759df - ( i >> 1 );               // what the fuck?  
+   y  = * ( float * ) &i;  
+   y  = y * ( threehalfs - ( x2 * y * y ) );   // 1st iteration  
+// y = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed  
+ 
+   return y;  
+}
+
 void chassis_control_task2(void) //定位跑位
 {
 	// 1. 获取用户输入
 	// 直接拿位置的pid替换遥控器，反正都是输出要多少速度，后面调调参数即可。
 	//去拿目标位置，目标位置在上位机通信的结构体里边   现在位置去找全场定位代码。
 
-	double vx_in = calculate_pid(&PID_pos_x,PossiBuffRcf.X,position.world_x,false);// 前后速度
-	double vy_in = calculate_pid(&PID_pos_y,PossiBuffRcf.Y,position.world_y,false); // 左右速度
+
+	float delta_x_absolute = position.world_x - PossiBuffRcf.X;
+	float delta_y_absolute = position.world_y - PossiBuffRcf.Y;
+	float alpha = artan(delta_y_absolute / delta_x_absolute);
+	float beta = position.world_yaw + 1.5707963 - alpha;
+	float len = Q_rsqrt(delta_x_absolute * delta_x_absolute + delta_y_absolute * delta_y_absolute);
+	float delta_x_equal = len * sin(beta);
+	float delta_y_equal = len * cos(beta);
+
+
+	double vx_in = calculate_pid_position(&PID_pos_x,/*PossiBuffRcf.X*/1000.0,position.world_x,delta_x_equal,false);// 前后速度
+	double vy_in = calculate_pid_position(&PID_pos_y,/*PossiBuffRcf.Y*/0.0,position.world_y,delta_y_equal,false); // 左右速度
 	double vz_in = calculate_pid(&PID_pos_yaw,PossiBuffRcf.Yaw, position.world_yaw,false);//旋转速度
 	// double vz_in =  pid calc yAW;// 旋转速度
 
@@ -560,7 +638,7 @@ void chassis_control_task2(void) //定位跑位
 
 	// 4. 逆运动学解算
 	// 使用 vx_in, vy_in, vz_final 计算三个轮子的目标速度
-	double v_target1 = (-vx_in * 0.667 + vz_final * 0.333) * SPEED_SCALE;
+	double v_target1 = (-vx_in * 0.667 + vz_final * 0.333 ) * SPEED_SCALE;
 	double v_target2 =
 		(vx_in * 0.333 + vy_in * 0.577 + vz_final * 0.333) * SPEED_SCALE;
 	double v_target3 =

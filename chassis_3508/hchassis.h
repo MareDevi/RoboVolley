@@ -11,7 +11,7 @@
 #define IOUT_MAX 800.0F
 #define OUT_MAX 3000.0F
 #define KP_P 5.0F
-#define KI_P 0.01F
+#define KI_P 0.00F
 #define KD_P 0.05F
 #define IOUT_MAX_p 100.0F
 #define OUT_MAX_p 500.0F

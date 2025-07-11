@@ -27,9 +27,6 @@ typedef struct
 
 extern motor_measure_t motor_chassis[3];
 
-// 全局调试变量
-extern double v1, v2, v3, yaw;
-
 typedef struct
 {
 	double kp;

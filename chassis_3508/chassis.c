@@ -11,7 +11,7 @@
 #include "usart.h"
 #include "stdio.h"
 #include "string.h"
-#include<math.h>
+#include <math.h>
 
 #define CAN_CHASSIS_ALL_ID 0x200
 #define CAN_3508_M1_ID 0x201
@@ -24,7 +24,7 @@
 // 声明一个静态变量来保存目标航向角
 static double target_yaw = 0.0;
 static bool heading_lock_first_time = true;
-//char uart1_tx_debug_data[300]; // 用于接收串口数据
+// char uart1_tx_debug_data[300]; // 用于接收串口数据
 
 // PID信息
 PID_typedef PID1;
@@ -33,7 +33,7 @@ PID_typedef PID3;
 PID_typedef PID_pos_x;
 PID_typedef PID_pos_y;
 PID_typedef PID_pos_yaw;
-PID_typedef PID_yaw;					// <-- 新增：为Yaw轴角度闭环准备的PID
+PID_typedef PID_yaw; // <-- 新增：为Yaw轴角度闭环准备的PID
 
 motor_measure_t motor_chassis[3] = {0}; // 电机信息
 
@@ -149,20 +149,20 @@ void shut_up(void)
 }
 
 // 清除数值
-void val_clear(void)
-{
-	DBUS_decode_val.key = 0;
-	DBUS_decode_val.mod = 0;
-	for (uint8_t i = 0; i < 4; i++)
-	{
-		DBUS_decode_val.rocker[i] = 0;
-	}
-	for (uint8_t i = 0; i < 2; i++)
-	{
-		DBUS_decode_val.sw[i] = 0;
-	}
-	DBUS_decode_val.roll = 0;
-}
+// void val_clear(void)
+// {
+// 	DBUS_decode_val.key = 0;
+// 	DBUS_decode_val.mod = 0;
+// 	for (uint8_t i = 0; i < 4; i++)
+// 	{
+// 		DBUS_decode_val.rocker[i] = 0;
+// 	}
+// 	for (uint8_t i = 0; i < 2; i++)
+// 	{
+// 		DBUS_decode_val.sw[i] = 0;
+// 	}
+// 	DBUS_decode_val.roll = 0;
+// }
 
 // 初始化pid
 void pid_init()
@@ -218,11 +218,11 @@ void pid_init()
 	PID_yaw.out = 0;
 	PID_yaw.cur_error = 0;
 	PID_yaw.his_error = 0;
-	
+
 	PID_pos_x.kp = KP_P;
 	PID_pos_x.ki = KI_P;
 	PID_pos_x.kd = KD_P;
-	PID_pos_x.out_max = OUT_MAX_p ;
+	PID_pos_x.out_max = OUT_MAX_p;
 	PID_pos_x.iout_max = IOUT_MAX_p;
 	PID_pos_x.pout = 0;
 	PID_pos_x.iout = 0;
@@ -230,7 +230,7 @@ void pid_init()
 	PID_pos_x.out = 0;
 	PID_pos_x.cur_error = 0;
 	PID_pos_x.his_error = 0;
-	
+
 	PID_pos_y.kp = KP_P;
 	PID_pos_y.ki = KI_P;
 	PID_pos_y.kd = KD_P;
@@ -242,16 +242,28 @@ void pid_init()
 	PID_pos_y.out = 0;
 	PID_pos_y.cur_error = 0;
 	PID_pos_y.his_error = 0;
+
+	PID_pos_yaw.kp = KP_P;
+	PID_pos_yaw.ki = KI_P;
+	PID_pos_yaw.kd = KD_P;
+	PID_pos_yaw.out_max = OUT_MAX_p;
+	PID_pos_yaw.iout_max = IOUT_MAX_p;
+	PID_pos_yaw.pout = 0;
+	PID_pos_yaw.iout = 0;
+	PID_pos_yaw.dout = 0;
+	PID_pos_yaw.out = 0;
+	PID_pos_yaw.cur_error = 0;
+	PID_pos_yaw.his_error = 0;
 }
 
 // 通用PID计算函数
 // use_custom_error: false表示使用标准误差计算(target-current)，true表示使用自定义误差值custom_error
 static double calculate_pid(PID_typedef *pid, double target_val,
-							double current_val, bool is_stop_mode, 
+							double current_val, bool is_stop_mode,
 							bool use_custom_error, double custom_error)
 {
 	pid->his_error = pid->cur_error;
-	
+
 	// 根据参数选择误差计算方式
 	if (use_custom_error)
 	{
@@ -393,7 +405,6 @@ void chassis_control_task(void)
 	double v_target3 =
 		(vx_in * 0.333 - vy_in * 0.577 + vz_final * 0.333) * SPEED_SCALE;
 
-
 	// 5. 执行各电机速度PID并发送CAN指令
 	double motor_out1 =
 		calculate_pid_standard(&PID1, v_target1, motor_chassis[0].speed_rpm, false);
@@ -402,8 +413,8 @@ void chassis_control_task(void)
 	double motor_out3 =
 		calculate_pid_standard(&PID3, v_target3, motor_chassis[2].speed_rpm, false);
 
-//	sprintf((char *)uart1_tx_debug_data, "%d,%d\n", (int)(v_target1 * 100), (int)(motor_chassis[0].speed_rpm * 100));
-//	HAL_UART_Transmit_DMA(&huart1, (uint8_t *)uart1_tx_debug_data, strlen(uart1_tx_debug_data));
+	//	sprintf((char *)uart1_tx_debug_data, "%d,%d\n", (int)(v_target1 * 100), (int)(motor_chassis[0].speed_rpm * 100));
+	//	HAL_UART_Transmit_DMA(&huart1, (uint8_t *)uart1_tx_debug_data, strlen(uart1_tx_debug_data));
 
 	chassis_can_cmd(motor_out1, motor_out2, motor_out3);
 	HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);
@@ -430,63 +441,62 @@ void chassis_stop(void)
 	heading_lock_first_time = true;
 }
 /**
-* @brief 全场定位
-* @note 控制电机到达目标位置
+ * @brief 全场定位
+ * @note 控制电机到达目标位置
  */
-void chassis_navi(float x_now,float y_now ,float x_tar,float y_tar)
-{   
-	//位置环
-	double motor_out_x = calculate_pid_standard(&PID_pos_x,x_tar,x_now,false);
-	double motor_out_y = calculate_pid_standard(&PID_pos_y,y_tar,y_now,false);
-	
+void chassis_navi(float x_now, float y_now, float x_tar, float y_tar)
+{
+	// 位置环
+	double motor_out_x = calculate_pid_standard(&PID_pos_x, x_tar, x_now, false);
+	double motor_out_y = calculate_pid_standard(&PID_pos_y, y_tar, y_now, false);
+
 	// 计算Yaw轴修正
 	double current_yaw =
 		-get_INS_angle_point()[0]; // 获取当前航向角，与之前保持一致
 	double yaw_correction_speed = 0.0;
 	//
 	if (heading_lock_first_time)
-		{
-			target_yaw = current_yaw;
-			heading_lock_first_time = false;
-		}
+	{
+		target_yaw = current_yaw;
+		heading_lock_first_time = false;
+	}
 	// 计算角度误差
-		double yaw_error = target_yaw - current_yaw;
+	double yaw_error = target_yaw - current_yaw;
 
-		while (yaw_error > 3.14159265)
-			yaw_error -= 2 * 3.14159265;
-		while (yaw_error < -3.14159265)
-			yaw_error += 2 * 3.14159265;
-	
+	while (yaw_error > 3.14159265)
+		yaw_error -= 2 * 3.14159265;
+	while (yaw_error < -3.14159265)
+		yaw_error += 2 * 3.14159265;
+
 	// 添加角度死区，避免在静止时持续修正微小误差
-		if (fabs(yaw_error) > 0.05) // 角度死区：约3度（假设单位是弧度）
-		{
-			// 使用通用PID计算函数来计算修正速度
-			yaw_correction_speed =
-				calculate_pid_standard(&PID_yaw, 0, -yaw_error, false);
+	if (fabs(yaw_error) > 0.05) // 角度死区：约3度（假设单位是弧度）
+	{
+		// 使用通用PID计算函数来计算修正速度
+		yaw_correction_speed =
+			calculate_pid_standard(&PID_yaw, 0, -yaw_error, false);
 
-			// // 限制修正速度的幅度，避免过大的修正
-			// if (yaw_correction_speed > 50)
-			// 	yaw_correction_speed = 50;
-			// if (yaw_correction_speed < -50)
-			// 	yaw_correction_speed = -50;
-		}
-		else
-		{
-			// 在死区内，不进行修正，并清除PID积分项
-			yaw_correction_speed = 0.0;
-			PID_yaw.iout = 0; // 清除积分项，防止累积
-		}
-   
+		// // 限制修正速度的幅度，避免过大的修正
+		// if (yaw_correction_speed > 50)
+		// 	yaw_correction_speed = 50;
+		// if (yaw_correction_speed < -50)
+		// 	yaw_correction_speed = -50;
+	}
+	else
+	{
+		// 在死区内，不进行修正，并清除PID积分项
+		yaw_correction_speed = 0.0;
+		PID_yaw.iout = 0; // 清除积分项，防止累积
+	}
+
 	double vx_tar = motor_out_x; // 前后速度
 	double vy_tar = motor_out_y; // 左右速度
-    double vz_tar= yaw_correction_speed;
-	
+	double vz_tar = yaw_correction_speed;
+
 	// 4. 逆运动学解算
 	// 使用 vx_in, vy_in, vz_final 计算三个轮子的目标速度
-	double v_target1 = (vx_tar * 0.667+ yaw_correction_speed * 0.333) * SPEED_SCALE;
-	double v_target2 = (vx_tar * 0.333 +vy_tar * 0.577+ yaw_correction_speed * 0.333 ) * SPEED_SCALE;
-	double v_target3 = (vx_tar * 0.333 - vy_tar * 0.577+ yaw_correction_speed * 0.333 ) * SPEED_SCALE;
-
+	double v_target1 = (vx_tar * 0.667 + yaw_correction_speed * 0.333) * SPEED_SCALE;
+	double v_target2 = (vx_tar * 0.333 + vy_tar * 0.577 + yaw_correction_speed * 0.333) * SPEED_SCALE;
+	double v_target3 = (vx_tar * 0.333 - vy_tar * 0.577 + yaw_correction_speed * 0.333) * SPEED_SCALE;
 
 	// 5. 执行各电机速度PID并发送CAN指令
 	double motor_out1 =
@@ -498,45 +508,63 @@ void chassis_navi(float x_now,float y_now ,float x_tar,float y_tar)
 
 	chassis_can_cmd(motor_out1, motor_out2, motor_out3);
 	HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);
-	
 }
 
-float Q_rsqrt( float number )  
-{  
-   long i;  
-   float x2, y;  
-   const float threehalfs = 1.5F;  
- 
-   x2 = number * 0.5F;  
-   y  = number;  
-   i  = * ( long * ) &y;                       // evil floating point bit level hacking  
-   i  = 0x5f3759df - ( i >> 1 );               // what the fuck?  
-   y  = * ( float * ) &i;  
-   y  = y * ( threehalfs - ( x2 * y * y ) );   // 1st iteration  
-// y = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed  
- 
-   return y;  
+float Q_rsqrt(float number)
+{
+	long i;
+	float x2, y;
+	const float threehalfs = 1.5F;
+
+	x2 = number * 0.5F;
+	y = number;
+	i = *(long *)&y;		   // evil floating point bit level hacking
+	i = 0x5f3759df - (i >> 1); // what the fuck?
+	y = *(float *)&i;
+	y = y * (threehalfs - (x2 * y * y)); // 1st iteration
+										 // y = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
+
+	return y;
 }
 
-void chassis_control_task2(void) //定位跑位
+float delta_x_absolute;
+float delta_y_absolute;
+float alpha;
+float beta;
+float len;
+float delta_x_equal;
+float delta_y_equal;
+double vx_in_posi;
+double vy_in_posi;
+double vz_in_posi;
+
+void chassis_control_task2(void) // 定位跑位
 {
 	// 1. 获取用户输入
 	// 直接拿位置的pid替换遥控器，反正都是输出要多少速度，后面调调参数即可。
-	//去拿目标位置，目标位置在上位机通信的结构体里边   现在位置去找全场定位代码。
+	// 去拿目标位置，目标位置在上位机通信的结构体里边   现在位置去找全场定位代码。
 
+	//	float delta_x_absolute = position.world_y - 1000 /*PossiBuffRcf.X*/;
+	//	float delta_y_absolute = -position.world_x - /*PossiBuffRcf.Y*/0.0;
+	//	float alpha = atan(delta_y_absolute / delta_x_absolute);
+	//	float beta = position.world_yaw + 1.5707963 - alpha;
+	//	float len = Q_rsqrt(delta_x_absolute * delta_x_absolute + delta_y_absolute * delta_y_absolute);
+	//	float delta_x_equal = len * sin(beta);
+	//	float delta_y_equal = len * cos(beta);
 
-	float delta_x_absolute = position.world_x - PossiBuffRcf.X;
-	float delta_y_absolute = position.world_y - PossiBuffRcf.Y;
-	float alpha = atan(delta_y_absolute / delta_x_absolute);
-	float beta = position.world_yaw + 1.5707963 - alpha;
-	float len = Q_rsqrt(delta_x_absolute * delta_x_absolute + delta_y_absolute * delta_y_absolute);
-	float delta_x_equal = len * sin(beta);
-	float delta_y_equal = len * cos(beta);
+	delta_x_absolute = -position.world_y - 0.0/*PossiBuffRcf.X*/;
+	delta_y_absolute = position.world_x - /*PossiBuffRcf.Y*/ 0.0;
+	alpha = atan(delta_y_absolute / delta_x_absolute);
+	beta = position.world_yaw + 1.5707963 - alpha;
+	len = sqrt(delta_x_absolute * delta_x_absolute + delta_y_absolute * delta_y_absolute);
+	delta_x_equal = len * sin(beta);
+	delta_y_equal = len * cos(beta);
 
+	vx_in_posi = calculate_pid_position(&PID_pos_x, /*PossiBuffRcf.X*/ 0.0, position.world_x, delta_x_equal, false);	// 前后速度
+	vy_in_posi = calculate_pid_position(&PID_pos_y, /*PossiBuffRcf.Y*/ 0.0, position.world_y, delta_y_equal, false); // 左右速度
+	// double vz_in = 100 * calculate_pid_standard(&PID_pos_yaw, PossiBuffRcf.Yaw, position.world_yaw, false);						// 旋转速度
+	vz_in_posi = calculate_pid_standard(&PID_pos_yaw, 90.0, position.world_yaw, false);						// 旋转速度
 
-	double vx_in = calculate_pid_position(&PID_pos_x,/*PossiBuffRcf.X*/1000.0,position.world_x,delta_x_equal,false);// 前后速度
-	double vy_in = calculate_pid_position(&PID_pos_y,/*PossiBuffRcf.Y*/0.0,position.world_y,delta_y_equal,false); // 左右速度
-	double vz_in = calculate_pid_standard(&PID_pos_yaw,PossiBuffRcf.Yaw, position.world_yaw,false);//旋转速度
 	// double vz_in =  pid calc yAW;// 旋转速度
 
 	// 2. 计算Yaw轴修正
@@ -545,7 +573,7 @@ void chassis_control_task2(void) //定位跑位
 	double yaw_correction_speed = 0.0;
 
 	// 航向锁定逻辑：当用户没有主动命令旋转时，启用航向锁定
-	if (fabs(vz_in) < 10) // 设置一个摇杆死区，避免误触
+	if (fabs(vz_in_posi) < 10) // 设置一个摇杆死区，避免误触
 	{
 		// 如果是刚进入锁定模式，则将当前角度设为目标角度
 		if (heading_lock_first_time)
@@ -592,15 +620,15 @@ void chassis_control_task2(void) //定位跑位
 
 	// 3. 叠加角速度
 	// 最终的机器人角速度 = 用户期望的角速度 + 航向修正角速度
-	double vz_final = vz_in + yaw_correction_speed;
+	double vz_final = vz_in_posi + yaw_correction_speed;
 
 	// 4. 逆运动学解算
 	// 使用 vx_in, vy_in, vz_final 计算三个轮子的目标速度
-	double v_target1 = (-vx_in * 0.667 + vz_final * 0.333 ) * SPEED_SCALE;
+	double v_target1 = (-vx_in_posi * 0.667 + vz_final * 0.333) * SPEED_SCALE;
 	double v_target2 =
-		(vx_in * 0.333 + vy_in * 0.577 + vz_final * 0.333) * SPEED_SCALE;
+		(vx_in_posi * 0.333 + vy_in_posi * 0.577 + vz_final * 0.333) * SPEED_SCALE;
 	double v_target3 =
-		(vx_in * 0.333 - vy_in * 0.577 + vz_final * 0.333) * SPEED_SCALE;
+		(vx_in_posi * 0.333 - vy_in_posi * 0.577 + vz_final * 0.333) * SPEED_SCALE;
 
 	// 5. 执行各电机速度PID并发送CAN指令
 	double motor_out1 =
@@ -610,10 +638,9 @@ void chassis_control_task2(void) //定位跑位
 	double motor_out3 =
 		calculate_pid_standard(&PID3, v_target3, motor_chassis[2].speed_rpm, false);
 
-//	sprintf((char *)uart1_tx_debug_data, "%d,%d\n", (int)(v_target1 * 100), (int)(motor_chassis[0].speed_rpm * 100));
-//	HAL_UART_Transmit_DMA(&huart1, (uint8_t *)uart1_tx_debug_data, strlen(uart1_tx_debug_data));
+	//	sprintf((char *)uart1_tx_debug_data, "%d,%d\n", (int)(v_target1 * 100), (int)(motor_chassis[0].speed_rpm * 100));
+	//	HAL_UART_Transmit_DMA(&huart1, (uint8_t *)uart1_tx_debug_data, strlen(uart1_tx_debug_data));
 
 	chassis_can_cmd(motor_out1, motor_out2, motor_out3);
 	HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);
 }
-

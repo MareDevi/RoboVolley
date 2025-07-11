@@ -10,11 +10,11 @@
 #define KD 0.3F
 #define IOUT_MAX 800.0F
 #define OUT_MAX 3000.0F
-#define KP_P 10.0F
+#define KP_P 5.0F
 #define KI_P 0.01F
 #define KD_P 0.05F
 #define IOUT_MAX_p 100.0F
-#define OUT_MAX_p 660.0F
+#define OUT_MAX_p 500.0F
 
 typedef struct
 {
@@ -60,9 +60,9 @@ void shut_up(void);
 // 清除数值
 void val_clear(void);
 // 位置环控制
-void chassis_navi(float x_now,float y_now ,float x_tar,float y_tar);
+void chassis_navi(float x_now, float y_now, float x_tar, float y_tar);
 
-void chassis_control_task2(void) ;//定位跑位
+void chassis_control_task2(void); // 定位跑位
 // 已弃用的单独电机PID函数声明（已在chassis.c中注释掉）
 // double chassis_motor_1_pid(void);
 // double chassis_motor_2_pid(void);

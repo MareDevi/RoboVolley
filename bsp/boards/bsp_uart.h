@@ -27,14 +27,14 @@ typedef struct {
     float world_x;
     float world_y;
     float world_yaw;
-		float self_x;
-		float self_y;
+	float self_x;
+	float self_y;
 }Position;  
 
 typedef struct {
-    uint8_t cmd_id;           // ÃüÁîID
-    uint8_t *data;            // Êı¾İÖ¸Õë
-    uint8_t data_len;         // Êı¾İ³¤¶È
+    uint8_t cmd_id;           // ï¿½ï¿½ï¿½ï¿½ID
+    uint8_t *data;            // ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½
+    uint8_t data_len;         // ï¿½ï¿½ï¿½İ³ï¿½ï¿½ï¿½
 } uart_packet_t;
 int uart_decode_packet(uint8_t *buf, uint16_t len, uart_packet_t *packet);
 

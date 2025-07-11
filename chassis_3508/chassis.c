@@ -16,9 +16,7 @@
 #define CAN_3508_M1_ID 0x201
 #define CAN_3508_M2_ID 0x202
 #define CAN_3508_M3_ID 0x203
-// #define CAN_3508_M3_ID 0x201
-// #define CAN_3508_M2_ID 0x202
-// #define CAN_3508_M1_ID 0x203
+
 #define SPEED_SCALE 7.8F
 #define KR 290.0F
 
@@ -33,6 +31,7 @@ PID_typedef PID2;
 PID_typedef PID3;
 PID_typedef PID_pos_x;
 PID_typedef PID_pos_y;
+PID_typedef PID_pos_yaw;
 PID_typedef PID_yaw;					// <-- 新增：为Yaw轴角度闭环准备的PID
 
 motor_measure_t motor_chassis[3] = {0}; // 电机信息
@@ -491,3 +490,99 @@ void chassis_navi(float x_now,float y_now ,float x_tar,float y_tar)
 	HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);
 	
 }
+
+void chassis_control_task2(void) //定位跑位
+{
+	// 1. 获取用户输入
+	// 直接拿位置的pid替换遥控器，反正都是输出要多少速度，后面调调参数即可。
+	//去拿目标位置，目标位置在上位机通信的结构体里边   现在位置去找全场定位代码。
+
+	double vx_in = calculate_pid(&PID_pos_x,PossiBuffRcf.X,position.world_x,false);// 前后速度
+	double vy_in = calculate_pid(&PID_pos_y,PossiBuffRcf.Y,position.world_y,false); // 左右速度
+	double vz_in = calculate_pid(&PID_pos_yaw,PossiBuffRcf.Yaw, position.world_yaw,false);//旋转速度
+	// double vz_in =  pid calc yAW;// 旋转速度
+
+	// 2. 计算Yaw轴修正
+	double current_yaw =
+		-get_INS_angle_point()[0]; // 获取当前航向角，与之前保持一致
+	yaw = current_yaw;
+	double yaw_correction_speed = 0.0;
+
+	// 航向锁定逻辑：当用户没有主动命令旋转时，启用航向锁定
+	if (fabs(vz_in) < 10) // 设置一个摇杆死区，避免误触
+	{
+		// 如果是刚进入锁定模式，则将当前角度设为目标角度
+		if (heading_lock_first_time)
+		{
+			target_yaw = current_yaw;
+			heading_lock_first_time = false;
+		}
+
+		// 计算角度误差
+		double yaw_error = target_yaw - current_yaw;
+
+		while (yaw_error > 3.14159265)
+			yaw_error -= 2 * 3.14159265;
+		while (yaw_error < -3.14159265)
+			yaw_error += 2 * 3.14159265;
+
+		// 添加角度死区，避免在静止时持续修正微小误差
+		if (fabs(yaw_error) > 0.05) // 角度死区：约3度（假设单位是弧度）
+		{
+			// 使用通用PID计算函数来计算修正速度
+			yaw_correction_speed =
+				calculate_pid(&PID_yaw, 0, -yaw_error, false);
+
+			// 限制修正速度的幅度，避免过大的修正
+			// if (yaw_correction_speed > 50)
+			// 	yaw_correction_speed = 50;
+			// if (yaw_correction_speed < -50)
+			// 	yaw_correction_speed = -50;
+		}
+		else
+		{
+			// 在死区内，不进行修正，并清除PID积分项
+			yaw_correction_speed = 0.0;
+			PID_yaw.iout = 0; // 清除积分项，防止累积
+		}
+	}
+	else
+	{
+		// 如果用户正在主动旋转，则重置锁定状态，不进行修正
+		heading_lock_first_time = true;
+		yaw_correction_speed = 0.0;
+		PID_yaw.iout = 0; // 清除积分项
+	}
+
+	// 3. 叠加角速度
+	// 最终的机器人角速度 = 用户期望的角速度 + 航向修正角速度
+	double vz_final = vz_in + yaw_correction_speed;
+
+	// 4. 逆运动学解算
+	// 使用 vx_in, vy_in, vz_final 计算三个轮子的目标速度
+	double v_target1 = (-vx_in * 0.667 + vz_final * 0.333) * SPEED_SCALE;
+	double v_target2 =
+		(vx_in * 0.333 + vy_in * 0.577 + vz_final * 0.333) * SPEED_SCALE;
+	double v_target3 =
+		(vx_in * 0.333 - vy_in * 0.577 + vz_final * 0.333) * SPEED_SCALE;
+
+	// 全局变量v1,v2,v3用于调试，可以保留
+	v1 = v_target1;
+	v2 = v_target2;
+	v3 = v_target3;
+
+	// 5. 执行各电机速度PID并发送CAN指令
+	double motor_out1 =
+		calculate_pid(&PID1, v_target1, motor_chassis[0].speed_rpm, false);
+	double motor_out2 =
+		calculate_pid(&PID2, v_target2, motor_chassis[1].speed_rpm, false);
+	double motor_out3 =
+		calculate_pid(&PID3, v_target3, motor_chassis[2].speed_rpm, false);
+
+//	sprintf((char *)uart1_tx_debug_data, "%d,%d\n", (int)(v_target1 * 100), (int)(motor_chassis[0].speed_rpm * 100));
+//	HAL_UART_Transmit_DMA(&huart1, (uint8_t *)uart1_tx_debug_data, strlen(uart1_tx_debug_data));
+
+	chassis_can_cmd(motor_out1, motor_out2, motor_out3);
+	HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);
+}
+

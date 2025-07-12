@@ -40,7 +40,8 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+RobStrite_Motor *motors[] = {&motor1, &motor2, &motor3, &motor4, &motor5};
+const uint8_t motor_ids[] = {0x01, 0x02, 0x03, 0x04, 0x05};
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -69,16 +70,16 @@ osThreadId imuTaskHandle;
 
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void const * argument);
-void Buff_ReCf(void const * argument);
-void gimbal(void const * argument);
-extern void chassis_task(void const * argument);
-extern void INS_task(void const * argument);
+void StartDefaultTask(void const *argument);
+void Buff_ReCf(void const *argument);
+void gimbal(void const *argument);
+extern void chassis_task(void const *argument);
+extern void INS_task(void const *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize);
 
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
@@ -94,35 +95,31 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackTyp
 /* USER CODE END GET_IDLE_TASK_MEMORY */
 
 /**
-  * @brief  FreeRTOS initialization
-  * @param  None
-  * @retval None
-  */
-void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
+void MX_FREERTOS_Init(void)
+{
+	/* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* USER CODE BEGIN RTOS_MUTEX */
+	/* USER CODE BEGIN RTOS_MUTEX */
 	/* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
+	/* USER CODE END RTOS_MUTEX */
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
+	/* USER CODE BEGIN RTOS_SEMAPHORES */
 	/* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
+	/* USER CODE END RTOS_SEMAPHORES */
 
-  /* USER CODE BEGIN RTOS_TIMERS */
+	/* USER CODE BEGIN RTOS_TIMERS */
 	/* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
+	/* USER CODE END RTOS_TIMERS */
 
-  /* USER CODE BEGIN RTOS_QUEUES */
+	/* USER CODE BEGIN RTOS_QUEUES */
 	/* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
-
-  /* Create the thread(s) */
-  /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
-  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+	/* USER CODE END RTOS_QUEUES */
 
   /* definition and creation of Rcontrol */
   osThreadDef(Rcontrol, Buff_ReCf, osPriorityHigh, 0, 256);
@@ -132,17 +129,20 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(gimbalTask, gimbal, osPriorityIdle, 0, 512);
   gimbalTaskHandle = osThreadCreate(osThread(gimbalTask), NULL);
 
-  /* definition and creation of chassisTask */
-  osThreadDef(chassisTask, chassis_task, osPriorityNormal, 0, 128);
-  chassisTaskHandle = osThreadCreate(osThread(chassisTask), NULL);
+	/* definition and creation of gimbalTask */
+	osThreadDef(gimbalTask, gimbal, osPriorityAboveNormal, 0, 128);
+	gimbalTaskHandle = osThreadCreate(osThread(gimbalTask), NULL);
 
-  /* definition and creation of imuTask */
-  osThreadDef(imuTask, INS_task, osPriorityRealtime, 0, 256);
-  imuTaskHandle = osThreadCreate(osThread(imuTask), NULL);
+	/* definition and creation of chassisTask */
+	osThreadDef(chassisTask, chassis_task, osPriorityNormal, 0, 128);
+	chassisTaskHandle = osThreadCreate(osThread(chassisTask), NULL);
 
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* USER CODE END RTOS_THREADS */
+	/* definition and creation of imuTask */
+	osThreadDef(imuTask, INS_task, osPriorityRealtime, 0, 256);
+	imuTaskHandle = osThreadCreate(osThread(imuTask), NULL);
 
+	/* USER CODE BEGIN RTOS_THREADS */
+	/* USER CODE END RTOS_THREADS */
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -152,15 +152,15 @@ void MX_FREERTOS_Init(void) {
  * @retval None
  */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const * argument)
+void StartDefaultTask(void const *argument)
 {
-  /* USER CODE BEGIN StartDefaultTask */
+	/* USER CODE BEGIN StartDefaultTask */
 	/* Infinite loop */
 	for (;;)
 	{
 		osDelay(1);
 	}
-  /* USER CODE END StartDefaultTask */
+	/* USER CODE END StartDefaultTask */
 }
 
 /* USER CODE BEGIN Header_Buff_ReCf */
@@ -170,15 +170,17 @@ void StartDefaultTask(void const * argument)
  * @retval None
  */
 /* USER CODE END Header_Buff_ReCf */
-void Buff_ReCf(void const * argument)
+void Buff_ReCf(void const *argument)
 {
-  /* USER CODE BEGIN Buff_ReCf */
+	/* USER CODE BEGIN Buff_ReCf */
 	/* Infinite loop */
 	DBUS_decode_val.isenable = 0;
 	static BuzzerState buzzer_state = BUZZER_STATE_IDLE;
 	TickType_t xUpTime = xTaskGetTickCount();
 	static uint32_t buzzer_start_tick = 0;
 	HAL_UART_Receive_IT(&huart3, DBUS_buff, BUFF_LEN);
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart6, uart6_rx_buffer, sizeof(uart6_rx_buffer));
 	// HAL_UARTEx_ReceiveToIdle_IT(&huart3,DBUS_buff,sizeof(DBUS_buff));
 	while (1)
 	{
@@ -188,23 +190,16 @@ void Buff_ReCf(void const * argument)
 		{
 			DBUS_decode_val.mod = 0;
 			// 关电机
-			val_clear();
-			DBUS_decode_val.control_mode = 0; 
-			DBUS_decode_val.pitch = 0;		  
+			shut_up();
+			DBUS_decode_val.control_mode = 0;
+			DBUS_decode_val.pitch = 0;
 			DBUS_decode_val.isenable = 0;
-			Disenable_Motor(&motor5, 0); 
-			osDelay(0);
-			Disenable_Motor(&motor4, 0); 
-			osDelay(0);
-			Disenable_Motor(&motor1, 0); 
-			osDelay(0);
-			Disenable_Motor(&motor2, 0); 
-			osDelay(0);
-			Disenable_Motor(&motor3, 0); 
-			osDelay(0);
-			Disenable_Motor(&motor5, 0); 
-			osDelay(0);
-			// HAL_CAN_Stop(&hcan1);
+
+			for (int i = 0; i < 5; i++)
+			{
+				Disenable_Motor(motors[i], 0);
+				osDelay(0);
+			}
 		}
 		else if (DBUS_decode_val.key == 1 && DBUS_decode_val.mod == 0)
 		{
@@ -237,22 +232,22 @@ void Buff_ReCf(void const * argument)
 			Enable_Motor(&motor4);
 			//Set_ZeroPos(&motor5);
 			osDelay(1);
+      
 			Set_ZeroPos(&motor5);
 			Set_ZeroPos(&motor1);
 			Set_ZeroPos(&motor2);
 			//Set_ZeroPos_compen(&motor2);
 			Set_ZeroPos(&motor3);
-			//}
 			DBUS_decode_val.pitch = 0;
 			pid_init();
-			HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
+			// HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
 		}
 		if (DBUS_decode_val.control_mode != 0 && DBUS_decode_val.isenable == 0)
 		{
-			RobStrite_Motor_Pos_control(&motor1, 0.5, 0.02);
-			RobStrite_Motor_Pos_control(&motor2, 0.5, 0.02);
-			RobStrite_Motor_Pos_control(&motor3, 0.5, 0.02);
-			
+			for (int i = 0; i < 3; i++)
+			{
+				RobStrite_Motor_Pos_control(motors[i], 0.5, 0.02);
+			}
 			RobStrite_Motor_Pos_control(&motor5, 4.0, 0.0); // 要确认下正负
 			osDelay(2);
 			DBUS_decode_val.isenable = 1;
@@ -274,57 +269,10 @@ void Buff_ReCf(void const * argument)
 			default:
 				break;
 			}
-//			if (DBUS_decode_val.control_mode != 0) 
-//			{
-//				switch (buzzer_state) 
-//				{
-//						case BUZZER_STATE_IDLE:
-//								if (DBUS_decode_val.sw[1] == 3) { // 首次检测到 MID
-//										buzzer_state = BUZZER_STATE_FIRST_UP;
-//								}
-//								break;
-//						
-//						case BUZZER_STATE_FIRST_UP:
-//								if (DBUS_decode_val.sw[1] == 1) { // 检测到 UP
-//										buzzer_state = BUZZER_STATE_MID;
-//										xUpTime = xTaskGetTickCount();
-//								} else if (DBUS_decode_val.sw[1] != 3) {
-//										buzzer_state = BUZZER_STATE_IDLE; // 无效状态重置
-//								}
-//								break;
-//						
-//						case BUZZER_STATE_MID:
-//								if (DBUS_decode_val.sw[1] == 3 && xTaskGetTickCount()-xUpTime <= 500) { // 再次检测到 MID
-//										buzzer_state = BUZZER_STATE_TRIGGERED;
-//										buzzer_start_tick = xTaskGetTickCount();
-//										buzzer_on(); // 启动蜂鸣器
-//										
-//									//全场定位置零
-//									
-//								} else if (DBUS_decode_val.sw[1] != 1 || xTaskGetTickCount()-xUpTime > 500) {
-//										buzzer_state = BUZZER_STATE_IDLE;
-//								}
-//								break;
-//						
-//						case BUZZER_STATE_TRIGGERED:
-//								// 蜂鸣器已触发，由定时器处理关闭
-//								if (xTaskGetTickCount() - buzzer_start_tick >= 500) 
-//								{ // 500ms后关闭
-//										buzzer_off();
-//										buzzer_state = BUZZER_STATE_IDLE; // 重置状态
-//								}
-//								break;
-//				}
-//			}
-//			else
-//			{
-//				buzzer_state = BUZZER_STATE_IDLE;
-//				buzzer_off();
-//			}
 		}
 	}
 
-  /* USER CODE END Buff_ReCf */
+	/* USER CODE END Buff_ReCf */
 }
 
 /* USER CODE BEGIN Header_gimbal */
@@ -334,9 +282,9 @@ void Buff_ReCf(void const * argument)
  * @retval None
  */
 /* USER CODE END Header_gimbal */
-void gimbal(void const * argument)
+void gimbal(void const *argument)
 {
-  /* USER CODE BEGIN gimbal */
+	/* USER CODE BEGIN gimbal */
 	/* Infinite loop */
 	TickType_t xLastWakeTime = xTaskGetTickCount();
 	int delay_tag = 0;
@@ -345,7 +293,7 @@ void gimbal(void const * argument)
 	double motor_vec = 1.0;
 	double final_pitch = 0.0;
 	double shot_ball_angle = 1.50; // 要确认正负
-	
+
 	while (1)
 	{
 		if (DBUS_decode_val.control_mode == 1) // 遥控器控制
@@ -365,13 +313,15 @@ void gimbal(void const * argument)
 				final_pitch = DBUS_decode_val.pitch;
 			}
 
+
 			RobStrite_Motor_Pos_control(&motor4, 4.0, final_pitch);
 			osDelay(1);
 			RobStrite_Motor_Pos_control(&motor5, 56.0, shot_ball_angle);
 			osDelay(1);
+
 			RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
 			osDelay(1);
-			switch (delay_tag) 
+			switch (delay_tag)
 			{
 					case 0: // 默认状态
 							if (DBUS_decode_val.sw[1] == 2) // 在发球模式默认状态在限位处
@@ -475,7 +425,7 @@ void gimbal(void const * argument)
 					default:
 							break;
 			}
-			
+
 			if (DBUS_decode_val.roll >= 600 && delay_tag == 0)
 			{
 				delay_tag = 1;
@@ -534,21 +484,23 @@ void gimbal(void const * argument)
 			if (PossiBuffRcf.Shot == 1 && delay_tag == 0)
 			{
 				delay_tag = 1;
+
 			}
 			osDelay(3);
 		}
 		else if (DBUS_decode_val.control_mode == 0)
 		{
-			if(delay_tag != 0)
-			{		
+			if (delay_tag != 0)
+			{
 				delay_tag = 0;
 				motor_angle = 0.007;
 				motor_vec = 1;
 				RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
 			}
+			
 		}
 	}
-  /* USER CODE END gimbal */
+	/* USER CODE END gimbal */
 }
 
 /* Private application code --------------------------------------------------*/

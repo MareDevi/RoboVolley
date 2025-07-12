@@ -2,33 +2,57 @@
 #include "usart.h"
 #include "crc.h"
 #include "bsp_buzzer.h"
+#include "hchassis.h"
+#include <stdio.h>
+#include <string.h>
 extern DMA_HandleTypeDef hdma_usart1_rx;
-uint8_t uart1_rx_buffer[26] =
-	{0xa5,0x10,0x00,0x00,0xd3,0x00,0x00
-	,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-	,0x00,0x98,0x1f};
-uint8_t uart1_tx_buffer[26] =
-	{0xa5,0x10,0x00,0x00,0xd3,0x00,0x00
-	,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-	,0x00,0x98,0x1f};
-	//0~6为固定位 7~10为X 11~14为Y 15~18为yaw 19~22为pitch 23为击球位 24~25为校验位
+extern DMA_HandleTypeDef hdma_usart6_rx;
+uint8_t nucinfo_rx_buf[2][NUCINFO_RX_BUF_NUM];  // 双缓冲区数组
+uint8_t uart1_rx_buffer[MAP_LEN];
+uint8_t uart6_rx_buffer[MESSAGE_LEN] =
+	{0x01,0x09,           // 帧头
+	 0x00,                // 击球 
+	 0x00,0x00,0x00,0x00, // x
+	 0x00,0x00,0x00,0x00, // y
+	 0x00,0x00,0x00,0x00, // yaw
+	 0x00,0x00,0x00,0x00};// pitch
+uint8_t uart6_tx_buffer[MESSAGE_LEN] =
+	{0x01,0x09,
+	 0x00,
+	 0x00,0x00,0x00,0x00,
+	 0x00,0x00,0x00,0x00,
+	 0x00,0x00,0x00,0x00,
+	 0x00,0x00,0x00,0x00};
 possi_buff_typedef PossiBuffRcf;
 possi_buff_typedef PossiBuffSnd;
-
+//map_buff_typedef MapBuffRcf;
+extern uart_packet_t packet;	 
 void uart1_init(void)
 {
 	HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
 	__HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
 }	
+void uart6_init(void)
+{
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart6, uart6_rx_buffer, sizeof(uart6_rx_buffer));
+	__HAL_DMA_DISABLE_IT(&hdma_usart6_rx, DMA_IT_HT);
+}	
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) //DMA
 {
-	if(huart == &huart1)
+	if(huart == &huart6)
 	{
-		int receive_error = Rcf_decode(&PossiBuffRcf, uart1_rx_buffer);
-		Snd_code(&PossiBuffSnd, uart1_tx_buffer);
-		HAL_UART_Transmit_DMA(&huart1, uart1_tx_buffer, Size);
+		int receive_error = Rcf_decode(&PossiBuffRcf, uart6_rx_buffer);
+		Snd_code(&PossiBuffSnd, uart6_tx_buffer);
+		HAL_UART_Transmit_DMA(&huart6, uart6_tx_buffer, Size);
 		
+		HAL_UARTEx_ReceiveToIdle_DMA(&huart6, uart6_rx_buffer, sizeof(uart6_rx_buffer));
+		__HAL_DMA_DISABLE_IT(&hdma_usart6_rx, DMA_IT_HT);
+	}
+	else if(huart == &huart1)
+	{
+		//Map_decode(&MapBuffRcf, uart1_rx_buffer);
+		uart_decode_packet(uart1_rx_buffer,20,&packet);
 		HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
 		__HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
 	}
@@ -72,31 +96,21 @@ float be_bytes_to_float(const uint8_t bytes[4]) {
  * @return 错误状态码:
  *        0 = 成功
  *       -1 = 无效输入参数
- *       -2 = CRC8 校验失败
- *       -3 = CRC16 校验失败
  */
 int Rcf_decode(possi_buff_typedef *PossiBuffRcf, uint8_t *bytes) {
     if (!PossiBuffRcf || !bytes) return -1;
     
-    // CRC8 校验头（前4字节）
-    if (bytes[4] != Get_CRC8_Check_Sum(bytes, 4, CRC8_INIT)) {
-        return -2;
-    }
-    
-    // 使用现有函数进行CRC16校验
-    uint16_t crc_calc = Get_CRC16_Check_Sum(bytes, 24, CRC_INIT);
-    uint16_t crc_recv = (bytes[24] << 8) | bytes[25];
-    
-    if (crc_calc != crc_recv) {
-        return -3;
+    // 帧头校验（前2字节）
+    if (bytes[0] != 0x01 || bytes[1] != 0x09) {
+        return -1;
     }
     
     // 从字节数组中提取浮点数值
-    PossiBuffRcf->X       = be_bytes_to_float(&bytes[7]);
-    PossiBuffRcf->Y       = be_bytes_to_float(&bytes[11]);
-    PossiBuffRcf->Yaw     = be_bytes_to_float(&bytes[15]);
-    PossiBuffRcf->Pitch   = be_bytes_to_float(&bytes[19]);
-		PossiBuffRcf->Shot    = bytes[23];
+		PossiBuffRcf->Shot    = bytes[2];
+    PossiBuffRcf->X       = be_bytes_to_float(&bytes[3]);
+    PossiBuffRcf->Y       = be_bytes_to_float(&bytes[7]);
+    PossiBuffRcf->Yaw     = be_bytes_to_float(&bytes[11]);
+    PossiBuffRcf->Pitch   = be_bytes_to_float(&bytes[15]);
 		return 0;
 }
 
@@ -115,18 +129,47 @@ void Snd_code(possi_buff_typedef *PossiBuffSnd, uint8_t *bytes) {
     float_to_be_bytes(PossiBuffSnd->Y, y_bytes);
 		shot_bytes = PossiBuffSnd->Shot;
     
-    // 设置初始CRC校验
-    bytes[4] = Get_CRC8_Check_Sum(bytes, 4, CRC8_INIT);
+		bytes[0] = 0x01;
+		bytes[1] = 0x09;
     
     // 批量设置浮点数字节
-    memcpy(&bytes[7], pitch_bytes, 4);
-    memcpy(&bytes[11], x_bytes, 4);
-    memcpy(&bytes[15], y_bytes, 4);
-    memcpy(&bytes[19], yaw_bytes, 4);
-		bytes[23] = shot_bytes;
-    
-    // 计算并设置CRC16校验
-    uint16_t crc16 = Get_CRC16_Check_Sum(bytes, 24, CRC_INIT);
-    bytes[24] = (crc16 >> 8) & 0xFF;  // 存储高字节
-    bytes[25] = crc16 & 0xFF;         // 存储低字节
+    bytes[2] = shot_bytes;
+    memcpy(&bytes[3], x_bytes, 4);
+    memcpy(&bytes[7], y_bytes, 4);
+    memcpy(&bytes[11], yaw_bytes, 4);
+		memcpy(&bytes[15], pitch_bytes, 4);
+}
+Position position;
+int uart_decode_packet(uint8_t *buf, uint16_t len, uart_packet_t *packet) {
+    if (len < UART_HEADER_LEN + 1 + UART_CRC16_LEN) return -1; // 长度不足
+
+    // 1. 检查SOF
+    if (buf[0] != 0xA5 || buf[1] != 0x5A) return -2;
+
+    // 2. 检查length
+    uint8_t data_len = buf[2];
+    if (len != UART_HEADER_LEN + 1 + data_len + UART_CRC16_LEN) return -3;
+
+    // 3. 检查header crc8
+    if (Verify_CRC8_Check_Sum(buf, UART_HEADER_LEN) == 0) return -4;
+
+    // 4. 检查crc16
+    if (Verify_CRC16_Check_Sum(buf, len) == 0) return -5;
+
+    // 5. 提取cmd_id和data
+    packet->cmd_id = buf[UART_HEADER_LEN];
+    packet->data = (uint8_t *)&buf[UART_HEADER_LEN + 1];
+    packet->data_len = data_len;
+	  //printf("decode_success\r\n");
+		memcpy(&position.world_x, &packet->data[0], sizeof(float));
+		memcpy(&position.world_y, &packet->data[4], sizeof(float));
+		memcpy(&position.world_yaw, &packet->data[8], sizeof(float));
+		PossiBuffSnd.X   = position.world_x;
+		PossiBuffSnd.Y   = position.world_y;
+		//PossiBuffSnd.Yaw = position.world_yaw;
+		//chassis_can_cmd(position.world_x,position.world_y,position.world_yaw);
+	  //printf("positon:%.2f,%.2f,%.2f\r\n",position.world_x,position.world_y,position.world_yaw);
+	  //HAL_UART_Transmit(&huart6,position.world_x,sizeof(position.world_x),100);
+	  //HAL_UART_Transmit(&huart6,position.world_x,sizeof(position.world_x),100);
+    return 0; // 成功
 }

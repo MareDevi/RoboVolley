@@ -11,6 +11,12 @@
 #define IOUT_MAX 3000.0F
 #define OUT_MAX 18000.0F
 
+#define KP_P 0.5F
+#define KI_P 0.0F
+#define KD_P 0.0F
+#define IOUT_MAX_p 100.0F
+#define OUT_MAX_p 500.0F
+
 typedef struct
 {
 	uint16_t ecd;
@@ -21,9 +27,6 @@ typedef struct
 } motor_measure_t;
 
 extern motor_measure_t motor_chassis[3];
-
-// 全局调试变量
-extern double v1, v2, v3, yaw;
 
 typedef struct
 {
@@ -40,7 +43,7 @@ typedef struct
 	double his_error;
 } PID_typedef;
 
-extern PID_typedef PID1, PID2, PID3, PID_yaw;
+extern PID_typedef PID1, PID2, PID3;
 
 // 初始化CAN滤波器
 void can_filter_init(void);
@@ -55,10 +58,12 @@ void chassis_control_task(void);
 void chassis_stop(void);
 // 关闭电机断电
 void shut_up(void);
-
 // 清除数值
 void val_clear(void);
+// 位置环控制
+void chassis_navi(float x_now, float y_now, float x_tar, float y_tar);
 
+void chassis_auto_task(void); // 定位跑位
 // 已弃用的单独电机PID函数声明（已在chassis.c中注释掉）
 // double chassis_motor_1_pid(void);
 // double chassis_motor_2_pid(void);

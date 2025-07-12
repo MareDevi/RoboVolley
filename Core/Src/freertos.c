@@ -129,10 +129,6 @@ void MX_FREERTOS_Init(void)
   osThreadDef(gimbalTask, gimbal, osPriorityIdle, 0, 512);
   gimbalTaskHandle = osThreadCreate(osThread(gimbalTask), NULL);
 
-	/* definition and creation of gimbalTask */
-	osThreadDef(gimbalTask, gimbal, osPriorityAboveNormal, 0, 128);
-	gimbalTaskHandle = osThreadCreate(osThread(gimbalTask), NULL);
-
 	/* definition and creation of chassisTask */
 	osThreadDef(chassisTask, chassis_task, osPriorityNormal, 0, 128);
 	chassisTaskHandle = osThreadCreate(osThread(chassisTask), NULL);
@@ -198,7 +194,7 @@ void Buff_ReCf(void const *argument)
 			for (int i = 0; i < 5; i++)
 			{
 				Disenable_Motor(motors[i], 0);
-				osDelay(0);
+				osDelay(1);
 			}
 		}
 		else if (DBUS_decode_val.key == 1 && DBUS_decode_val.mod == 0)
@@ -302,7 +298,7 @@ void gimbal(void const *argument)
 			DBUS_decode_val.pitch = (DBUS_decode_val.pitch > 0.1) ? 0.1 : ((DBUS_decode_val.pitch < -0.8) ? -0.8 : DBUS_decode_val.pitch);
 			//将遥控器值映射到pitch轴角度
 			
-			if(DBUS_decode_val.sw[1] == 3) // 初次进入对颠球模式将云台前倾,后续pitch受遥控器控制，发球板保持竖直不动
+			if(DBUS_decode_val.sw[1] !=2) // 初次进入对颠球模式将云台前倾,后续pitch受遥控器控制，发球板保持竖直不动
 			{
 				if(juggle == 0)
 				{
@@ -393,10 +389,9 @@ void gimbal(void const *argument)
 							delay_tag = 6;
 							break;
 					
-					case 6: // 等待130ms电机运行到指定角度、排球落到合适的击球点
+					case 6: // 等待120ms电机运行到指定角度、排球落到合适的击球点
 							if (xTaskGetTickCount() - xLastWakeTime >= pdMS_TO_TICKS(120))
-									delay_tag = 
-							7;
+									delay_tag = 7;
 							break;
 							
 					case 7: // 击球
@@ -417,7 +412,7 @@ void gimbal(void const *argument)
 							break;
 					
 					case 10: // 等待电机复位
-							if (xTaskGetTickCount() - xLastWakeTime >= pdMS_TO_TICKS(5000))
+							if (xTaskGetTickCount() - xLastWakeTime >= pdMS_TO_TICKS(3000))
 									delay_tag = 0;
 							//osDelay (5000);
 							break;
@@ -450,29 +445,16 @@ void gimbal(void const *argument)
 							final_pitch = 0;
 							shot_ball_angle = 0;
 							break;
-
-					case 1: // 低速出限位一点
-							motor_angle = 0.04;
-							motor_vec = 1;
+					
+					case 1: // 高速击球
+							motor_angle = 0.57;
+							motor_vec = 24;
 							final_pitch = 0;
 							xLastWakeTime = xTaskGetTickCount();
 							delay_tag = 2;
 							break;
 
-					case 2: // 等待25ms电机运行到指定角度
-							if (xTaskGetTickCount() - xLastWakeTime >= pdMS_TO_TICKS(25)) // 非阻塞式delay
-									delay_tag = 3;  // 状态转移 25ms
-							break;
-
-					case 3: // 高速击球
-							motor_angle = 0.57;
-							motor_vec = 24;
-							final_pitch = 0;
-							xLastWakeTime = xTaskGetTickCount();
-							delay_tag = 4;
-							break;
-
-					case 4: // 等待175ms电机运行到指定角度
+					case 2: // 等待175ms电机运行到指定角度
 							if (xTaskGetTickCount() - xLastWakeTime >= pdMS_TO_TICKS(175))
 									delay_tag = 0; // 回默认状态
 							break;

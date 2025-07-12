@@ -382,8 +382,8 @@ int state = 0;
 void chassis_auto_task(void) // 视觉定位任务
 {
   // 1. 获取位置数据
-  position_x_current = -position.world_y;   // 全场定位X坐标
-  position_y_current = -position.world_x;   // 全场定位Y坐标
+  position_x_current = position.world_y;   // 全场定位X坐标
+  position_y_current = position.world_x;   // 全场定位Y坐标
 	position_yaw = -position.world_yaw / 180  *3.1415; // 全场定位航向角(spi读的航向角是角度制)
 
   // 2. 设置目标位置（从上位机获取 PossiBuffRcf，调试时使用固定值）
@@ -406,27 +406,27 @@ void chassis_auto_task(void) // 视觉定位任务
 	switch(state)
 	{
 		case 0: // 平移阶段 - 只控制X和Y轴
-			// 检查是否到达位置（20mm误差范围内）
-			if(fabs(delta_x_equal) < 50 && fabs(delta_y_equal) < 50)
+			// 检查是否到达位置
+			if(fabs(delta_x_equal) < 20 && fabs(delta_y_equal) < 20)
 			{
 				state = 1; // 切换到旋转阶段
 			}
 			// 只控制平移，不控制旋转
-			vx_in_posi = -calculate_pid_position(&PID_pos_x, delta_x_equal, 10.0) * SPEED_POS;
-			vy_in_posi = -calculate_pid_position(&PID_pos_y, delta_y_equal, 10.0) * SPEED_POS;
+			vx_in_posi = -calculate_pid_position(&PID_pos_x, delta_x_equal, 20.0) * SPEED_POS;
+			vy_in_posi = -calculate_pid_position(&PID_pos_y, delta_y_equal, 20.0) * SPEED_POS;
 			vz_in_posi = 0.0; // 旋转速度为0
 			break;
 			
 		case 1: // 旋转阶段 - 只控制Yaw轴
 			// 检查是否旋转到位
-			if(fabs(delta_yaw) < 0.05)
+			if(fabs(delta_yaw) < 0.08)
 			{
 				state = 2; // 切换到完成状态
 			}
 			// 保持位置，只控制旋转
 			vx_in_posi = 0; //-calculate_pid_position(&PID_pos_x, delta_x_equal, 10.0) * SPEED_POS * 0.3; // 位置保持（降低增益）
 			vy_in_posi = 0; //-calculate_pid_position(&PID_pos_y, delta_y_equal, 10.0) * SPEED_POS * 0.3; // 位置保持（降低增益）
-			vz_in_posi = -calculate_pid_position(&PID_pos_yaw, delta_yaw, 0.05) * SPEED_POS; // 旋转控制
+			vz_in_posi = -calculate_pid_position(&PID_pos_yaw, delta_yaw, 0.08) * SPEED_POS; // 旋转控制
 			break;
 			
 		case 2: // 完成状态 - 全部控制以保持位置

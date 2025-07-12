@@ -19,11 +19,12 @@
 #define CAN_3508_M3_ID 0x203
 
 #define SPEED_SCALE 7.8F
+#define SPEED_POS 1.0F
 #define KR 290.0F
 
 // 声明一个静态变量来保存目标航向角
-static double target_yaw = 0.0;
-static bool heading_lock_first_time = true;
+//static double target_yaw = 0.0;
+//static bool heading_lock_first_time = true;
 // char uart1_tx_debug_data[300]; // 用于接收串口数据
 
 // PID信息
@@ -152,43 +153,43 @@ void shut_up(void)
 void pid_init()
 {
   // 初始化PID1
-  PID1.kp = 10.5;
-  PID1.ki = 0.6;
-  PID1.kd = 0.3;
-  PID1.out_max = 18000;
-  PID1.iout_max = 3000;
-  PID1.pout = 0;
-  PID1.iout = 0;
-  PID1.dout = 0;
-  PID1.out = 0;
-  PID1.cur_error = 0;
-  PID1.his_error = 0;
+	PID1.kp = KP;
+	PID1.ki = KI;
+	PID1.kd = KD;
+	PID1.out_max = OUT_MAX;
+	PID1.iout_max = IOUT_MAX;
+	PID1.pout = 0;
+	PID1.iout = 0;
+	PID1.dout = 0;
+	PID1.out = 0;
+	PID1.cur_error = 0;
+	PID1.his_error = 0;
 
-  // 初始化PID2
-  PID2.kp = 10.5;
-  PID2.ki = 0.6;
-  PID2.kd = 0.3;
-  PID2.out_max = 800;
-  PID2.iout_max = 3000;
-  PID2.pout = 0;
-  PID2.iout = 0;
-  PID2.dout = 0;
-  PID2.out = 0;
-  PID2.cur_error = 0;
-  PID2.his_error = 0;
+	// 初始化PID2
+	PID2.kp = KP;
+	PID2.ki = KI;
+	PID2.kd = KD;
+	PID2.out_max = OUT_MAX;
+	PID2.iout_max = IOUT_MAX;
+	PID2.pout = 0;
+	PID2.iout = 0;
+	PID2.dout = 0;
+	PID2.out = 0;
+	PID2.cur_error = 0;
+	PID2.his_error = 0;
 
-  // 初始化PID3
-  PID3.kp = 10.5;
-  PID3.ki = 0.6;
-  PID3.kd = 0.3;
-  PID3.out_max = 800;
-  PID3.iout_max = 3000;
-  PID3.pout = 0;
-  PID3.iout = 0;
-  PID3.dout = 0;
-  PID3.out = 0;
-  PID3.cur_error = 0;
-  PID3.his_error = 0;
+	// 初始化PID3
+	PID3.kp = KP;
+	PID3.ki = KI;
+	PID3.kd = KD;
+	PID3.out_max = OUT_MAX;
+	PID3.iout_max = IOUT_MAX;
+	PID3.pout = 0;
+	PID3.iout = 0;
+	PID3.dout = 0;
+	PID3.out = 0;
+	PID3.cur_error = 0;
+	PID3.his_error = 0;
 
   PID_pos_x.kp = KP_P;
   PID_pos_x.ki = KI_P;
@@ -214,11 +215,11 @@ void pid_init()
   PID_pos_y.cur_error = 0;
   PID_pos_y.his_error = 0;
 
-  PID_pos_yaw.kp = 3000;
+  PID_pos_yaw.kp = 1.0;
   PID_pos_yaw.ki = 0.0;
-  PID_pos_yaw.kd = 5.0;
-  PID_pos_yaw.out_max = 18000;
-  PID_pos_yaw.iout_max = 50;
+  PID_pos_yaw.kd = 0.0;
+  PID_pos_yaw.out_max = 1800;
+  PID_pos_yaw.iout_max = 5;
   PID_pos_yaw.pout = 0;
   PID_pos_yaw.iout = 0;
   PID_pos_yaw.dout = 0;
@@ -285,6 +286,7 @@ static double calculate_pid_position(PID_typedef *pid, double position_error,
  * @brief 底盘主控制任务，包含航向锁定
  * @note  此函数应在一个循环中被周期性调用
  */
+double vx,vy,vz;
 void chassis_control_task(void)
 {
   // 1. 获取用户输入
@@ -292,16 +294,20 @@ void chassis_control_task(void)
   double vx_in = DBUS_decode_val.rocker[2]; // 前后速度
   double vy_in = DBUS_decode_val.rocker[3]; // 左右速度
   double vz_in = DBUS_decode_val.rocker[0]; // 旋转速度
+	
+	vx = vx_in;
+	vy = vy_in;
+	vz = vz_in;
 
-  // 4. 逆运动学解算
-  // 使用 vx_in, vy_in, vz_final 计算三个轮子的目标速度
+  // 2. 逆运动学解算
+  // 使用 vx_in, vy_in, vz_in 计算三个轮子的目标速度
   double v_target1 = (-vx_in * 0.667 + vz_in * 0.333) * SPEED_SCALE;
   double v_target2 =
       (vx_in * 0.333 + vy_in * 0.577 + vz_in * 0.333) * SPEED_SCALE;
   double v_target3 =
       (vx_in * 0.333 - vy_in * 0.577 + vz_in * 0.333) * SPEED_SCALE;
 
-  // 5. 执行各电机速度PID并发送CAN指令
+  // 3. 执行各电机速度PID并发送CAN指令
   double motor_out1 = calculate_pid_standard(&PID1, v_target1,
                                              motor_chassis[0].speed_rpm, false);
   double motor_out2 = calculate_pid_standard(&PID2, v_target2,
@@ -346,14 +352,15 @@ void chassis_stop(void)
 #define YAW_TARGET 0.0F
 float position_x_target;
 float position_x_current;
-float position_x_Etarget;
-float position_x_Ecurrent;
 float position_y_target;
 float position_y_current;
-float position_y_Etarget;
-float position_y_Ecurrent;
 float position_yaw_target;
 float position_yaw_current;
+
+float position_x_Etarget;
+float position_x_Ecurrent;
+float position_y_Etarget;
+float position_y_Ecurrent;
 
 float delta_x_absolute;
 float delta_y_absolute;
@@ -371,13 +378,14 @@ double vz_in_posi;
 void chassis_auto_task(void) // 视觉定位任务
 {
   // 1. 获取位置数据
-  position_x_current = -position.world_y;  // 全场定位X坐标
+  position_x_current = position.world_y;   // 全场定位X坐标
   position_y_current = position.world_x;   // 全场定位Y坐标
-  position_yaw = position.world_yaw;       // 全场定位航向角
+	position_yaw = -position.world_yaw / 180  *3.1415; // 全场定位航向角(spi读的航向角是角度制)
+  //position_yaw = get_INS_angle_point()[0]; // 全场定位航向角(C板IUM是弧度制)
 
   // 2. 设置目标位置（从上位机获取 PossiBuffRcf，调试时使用固定值）
-  position_x_target = PossiBuffRcf.X;     // 目标X坐标，调试时可用 X_TARGET
-  position_y_target = PossiBuffRcf.Y;     // 目标Y坐标，调试时可用 Y_TARGET  
+  position_x_target = 0.0;//PossiBuffRcf.X;     // 目标X坐标，调试时可用 X_TARGET
+  position_y_target = 800.0;//PossiBuffRcf.Y;     // 目标Y坐标，调试时可用 Y_TARGET  
   position_yaw_target = PossiBuffRcf.Yaw; // 目标航向角，调试时可用 YAW_TARGET
   
   // 3. 计算全局位置误差
@@ -385,37 +393,37 @@ void chassis_auto_task(void) // 视觉定位任务
   delta_y_absolute = position_y_target - position_y_current;
   delta_yaw = position_yaw_target - position_yaw;
 
-  // 角度归一化：确保角度误差在[-π, π]范围内
-  while (delta_yaw > 3.14159265) delta_yaw -= 2 * 3.14159265;
-  while (delta_yaw < -3.14159265) delta_yaw += 2 * 3.14159265;
-
+   
   // 镝神的坐标变换
-  // position_x_Etarget = position_x_target*cos(position_yaw) - position_y_target*sin(position_yaw);
-  // position_y_Etarget = position_x_target*sin(position_yaw) + position_y_target*cos(position_yaw);
-  // position_x_Ecurrent = position_x_current*cos(position_yaw) - position_y_current*sin(position_yaw);
-  // position_y_Ecurrent = position_x_current*sin(position_yaw) + position_y_current*cos(position_yaw);
+  position_x_Etarget = position_x_target*cos(position_yaw) - position_y_target*sin(position_yaw);
+  position_y_Etarget = position_x_target*sin(position_yaw) + position_y_target*cos(position_yaw);
+  position_x_Ecurrent = position_x_current*cos(position_yaw) - position_y_current*sin(position_yaw);
+  position_y_Ecurrent = position_x_current*sin(position_yaw) + position_y_current*cos(position_yaw);
 
   // 4. 坐标变换：将全局误差转换为机器人坐标系
-  len = sqrt(delta_x_absolute * delta_x_absolute + delta_y_absolute * delta_y_absolute);
+  // len = sqrt(delta_x_absolute * delta_x_absolute + delta_y_absolute * delta_y_absolute);
 
-  if (len > 5.0) // 距离大于5mm时进行变换
-  {
-    alpha = atan2(delta_y_absolute, delta_x_absolute); // 目标方向角
-    beta = position_yaw + 1.5707963 - alpha;          // 转换角度
-    delta_x_equal = len * sin(beta); // 机器人坐标系下X误差（前后）
-    delta_y_equal = len * cos(beta); // 机器人坐标系下Y误差（左右）
-  }
-  else
-  {
-    // 距离太小，直接停止平移运动
-    delta_x_equal = 0.0;
-    delta_y_equal = 0.0;
-  }
+  // if (len > 10.0) // 距离大于5mm时进行变换
+  // {
+  //   alpha = atan2(delta_y_absolute, delta_x_absolute); // 目标方向角
+  //   beta = position_yaw + 1.5707963 - alpha;          // 转换角度
+  //   delta_x_equal = len * sin(beta); // 机器人坐标系下X误差（前后）
+  //   delta_y_equal = len * cos(beta); // 机器人坐标系下Y误差（左右）
+  // }
+  // else
+  // {
+  //   // 距离太小，直接停止平移运动
+  //   delta_x_equal = 0.0;
+  //   delta_y_equal = 0.0;
+  // }
+
+  delta_x_equal = position_x_Ecurrent - position_x_Etarget;
+  delta_y_equal = position_y_Ecurrent - position_y_Etarget;
 
   // 5. 位置PID控制
-  vx_in_posi = calculate_pid_position(&PID_pos_x, delta_x_equal, 10.0);   // 前后速度
-  vy_in_posi = calculate_pid_position(&PID_pos_y, - delta_y_equal, 10.0);   // 左右速度
-  vz_in_posi = calculate_pid_position(&PID_pos_yaw, delta_yaw, 0.05);     // 旋转速度（角度死区约3度）
+  vx_in_posi = -calculate_pid_position(&PID_pos_x, delta_x_equal, 10.0) * SPEED_POS;   // 前后速度
+  vy_in_posi = -calculate_pid_position(&PID_pos_y, delta_y_equal, 10.0) * SPEED_POS;   // 左右速度
+  vz_in_posi = calculate_pid_position(&PID_pos_yaw, delta_yaw, 0.05) * SPEED_POS;     // 旋转速度（角度死区约3度）
   
   // 6. 逆运动学解算（包含旋转分量）
   double v_target1 = (-vx_in_posi * 0.667 + vz_in_posi * 0.333) * SPEED_SCALE;

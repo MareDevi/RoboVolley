@@ -5,9 +5,14 @@
 #include "can.h"
 #include "pid.h"
 
-#define KP_P 5.0F
-#define KI_P 0.00F
-#define KD_P 0.05F
+#define KP 10.5F
+#define KI 0.6F
+#define KD 0.3F
+#define IOUT_MAX 3000.0F
+#define OUT_MAX 18000.0F
+#define KP_P 0.5F
+#define KI_P 0.0F
+#define KD_P 0.0F
 #define IOUT_MAX_p 100.0F
 #define OUT_MAX_p 500.0F
 

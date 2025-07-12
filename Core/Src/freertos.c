@@ -532,6 +532,7 @@ void gimbal(void const *argument)
 				motor_vec = 1;
 				RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
 			}
+			
 		}
 	}
 	/* USER CODE END gimbal */

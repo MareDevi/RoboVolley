@@ -4,6 +4,7 @@
 #include "bsp_buzzer.h"
 #include "hchassis.h"
 #include <stdio.h>
+#include <string.h>
 extern DMA_HandleTypeDef hdma_usart1_rx;
 extern DMA_HandleTypeDef hdma_usart6_rx;
 uint8_t nucinfo_rx_buf[2][NUCINFO_RX_BUF_NUM];  // 双缓冲区数组

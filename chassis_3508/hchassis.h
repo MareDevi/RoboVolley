@@ -5,11 +5,6 @@
 #include "can.h"
 #include "pid.h"
 
-#define KP 10.5F
-#define KI 0.6F
-#define KD 0.3F
-#define IOUT_MAX 800.0F
-#define OUT_MAX 3000.0F
 #define KP_P 5.0F
 #define KI_P 0.00F
 #define KD_P 0.05F
@@ -42,7 +37,7 @@ typedef struct
 	double his_error;
 } PID_typedef;
 
-extern PID_typedef PID1, PID2, PID3, PID_yaw;
+extern PID_typedef PID1, PID2, PID3;
 
 // 初始化CAN滤波器
 void can_filter_init(void);
@@ -62,7 +57,7 @@ void val_clear(void);
 // 位置环控制
 void chassis_navi(float x_now, float y_now, float x_tar, float y_tar);
 
-void chassis_control_task2(void); // 定位跑位
+void chassis_auto_task(void); // 定位跑位
 // 已弃用的单独电机PID函数声明（已在chassis.c中注释掉）
 // double chassis_motor_1_pid(void);
 // double chassis_motor_2_pid(void);

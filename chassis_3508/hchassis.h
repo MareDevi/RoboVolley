@@ -8,8 +8,8 @@
 #define KP 10.5F
 #define KI 0.6F
 #define KD 0.3F
-#define IOUT_MAX 800.0F
-#define OUT_MAX 3000.0F
+#define IOUT_MAX 3000.0F
+#define OUT_MAX 18000.0F
 
 typedef struct
 {

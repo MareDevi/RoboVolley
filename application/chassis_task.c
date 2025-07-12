@@ -62,8 +62,8 @@ void chassis_task(void const *argument)
 
     for (;;)
     {
-//				sprintf(uart1_tx_debug_data, "%.2lf\n", v2);
-//				HAL_UART_Transmit_DMA(&huart1, uart1_tx_debug_data, strlen(uart1_tx_debug_data));
+				//sprintf(uart1_tx_debug_data, "%.2lf\n", v2);
+				//HAL_UART_Transmit_DMA(&huart1, uart1_tx_debug_data, strlen(uart1_tx_debug_data));
         // 根据遥控器的模式切换控制逻辑
         // 模式1: 遥控器控制
         if (DBUS_decode_val.control_mode == 1)

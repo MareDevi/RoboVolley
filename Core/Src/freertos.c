@@ -125,11 +125,11 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of Rcontrol */
-  osThreadDef(Rcontrol, Buff_ReCf, osPriorityHigh, 0, 128);
+  osThreadDef(Rcontrol, Buff_ReCf, osPriorityHigh, 0, 256);
   RcontrolHandle = osThreadCreate(osThread(Rcontrol), NULL);
 
   /* definition and creation of gimbalTask */
-  osThreadDef(gimbalTask, gimbal, osPriorityIdle, 0, 128);
+  osThreadDef(gimbalTask, gimbal, osPriorityIdle, 0, 512);
   gimbalTaskHandle = osThreadCreate(osThread(gimbalTask), NULL);
 
   /* definition and creation of chassisTask */
@@ -228,14 +228,21 @@ void Buff_ReCf(void const * argument)
 			Set_RobStrite_Motor_parameter(&motor3, 0x7005, 5, Set_mode);
 			Set_RobStrite_Motor_parameter(&motor5, 0x7005, 5, Set_mode);
 			osDelay(2);
-
+           // Set_ZeroPos(&motor2);
+			//osDelay(1);
+            //RobStrite_Motor_Pos_control(&motor2, 1, 0.007);//电机位置补偿
+			//osDelay(100);
+			//for(int i=0;i<5;i++)
+			//{
 			Enable_Motor(&motor4);
+			//Set_ZeroPos(&motor5);
 			osDelay(1);
 			Set_ZeroPos(&motor5);
 			Set_ZeroPos(&motor1);
 			Set_ZeroPos(&motor2);
+			//Set_ZeroPos_compen(&motor2);
 			Set_ZeroPos(&motor3);
-
+			//}
 			DBUS_decode_val.pitch = 0;
 			pid_init();
 			HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart1_rx_buffer, sizeof(uart1_rx_buffer));
@@ -267,53 +274,53 @@ void Buff_ReCf(void const * argument)
 			default:
 				break;
 			}
-			if (DBUS_decode_val.control_mode != 0) 
-			{
-				switch (buzzer_state) 
-				{
-						case BUZZER_STATE_IDLE:
-								if (DBUS_decode_val.sw[1] == 3) { // 首次检测到 MID
-										buzzer_state = BUZZER_STATE_FIRST_UP;
-								}
-								break;
-						
-						case BUZZER_STATE_FIRST_UP:
-								if (DBUS_decode_val.sw[1] == 1) { // 检测到 UP
-										buzzer_state = BUZZER_STATE_MID;
-										xUpTime = xTaskGetTickCount();
-								} else if (DBUS_decode_val.sw[1] != 3) {
-										buzzer_state = BUZZER_STATE_IDLE; // 无效状态重置
-								}
-								break;
-						
-						case BUZZER_STATE_MID:
-								if (DBUS_decode_val.sw[1] == 3 && xTaskGetTickCount()-xUpTime <= 500) { // 再次检测到 MID
-										buzzer_state = BUZZER_STATE_TRIGGERED;
-										buzzer_start_tick = xTaskGetTickCount();
-										buzzer_on(); // 启动蜂鸣器
-										
-									//全场定位置零
-									
-								} else if (DBUS_decode_val.sw[1] != 1 || xTaskGetTickCount()-xUpTime > 500) {
-										buzzer_state = BUZZER_STATE_IDLE;
-								}
-								break;
-						
-						case BUZZER_STATE_TRIGGERED:
-								// 蜂鸣器已触发，由定时器处理关闭
-								if (xTaskGetTickCount() - buzzer_start_tick >= 500) 
-								{ // 500ms后关闭
-										buzzer_off();
-										buzzer_state = BUZZER_STATE_IDLE; // 重置状态
-								}
-								break;
-				}
-			}
-			else
-			{
-				buzzer_state = BUZZER_STATE_IDLE;
-				buzzer_off();
-			}
+//			if (DBUS_decode_val.control_mode != 0) 
+//			{
+//				switch (buzzer_state) 
+//				{
+//						case BUZZER_STATE_IDLE:
+//								if (DBUS_decode_val.sw[1] == 3) { // 首次检测到 MID
+//										buzzer_state = BUZZER_STATE_FIRST_UP;
+//								}
+//								break;
+//						
+//						case BUZZER_STATE_FIRST_UP:
+//								if (DBUS_decode_val.sw[1] == 1) { // 检测到 UP
+//										buzzer_state = BUZZER_STATE_MID;
+//										xUpTime = xTaskGetTickCount();
+//								} else if (DBUS_decode_val.sw[1] != 3) {
+//										buzzer_state = BUZZER_STATE_IDLE; // 无效状态重置
+//								}
+//								break;
+//						
+//						case BUZZER_STATE_MID:
+//								if (DBUS_decode_val.sw[1] == 3 && xTaskGetTickCount()-xUpTime <= 500) { // 再次检测到 MID
+//										buzzer_state = BUZZER_STATE_TRIGGERED;
+//										buzzer_start_tick = xTaskGetTickCount();
+//										buzzer_on(); // 启动蜂鸣器
+//										
+//									//全场定位置零
+//									
+//								} else if (DBUS_decode_val.sw[1] != 1 || xTaskGetTickCount()-xUpTime > 500) {
+//										buzzer_state = BUZZER_STATE_IDLE;
+//								}
+//								break;
+//						
+//						case BUZZER_STATE_TRIGGERED:
+//								// 蜂鸣器已触发，由定时器处理关闭
+//								if (xTaskGetTickCount() - buzzer_start_tick >= 500) 
+//								{ // 500ms后关闭
+//										buzzer_off();
+//										buzzer_state = BUZZER_STATE_IDLE; // 重置状态
+//								}
+//								break;
+//				}
+//			}
+//			else
+//			{
+//				buzzer_state = BUZZER_STATE_IDLE;
+//				buzzer_off();
+//			}
 		}
 	}
 
@@ -332,86 +339,96 @@ void gimbal(void const * argument)
   /* USER CODE BEGIN gimbal */
 	/* Infinite loop */
 	TickType_t xLastWakeTime = xTaskGetTickCount();
-	const TickType_t xDelay25 = pdMS_TO_TICKS(25); // 25ms 转换为 tick
-	const TickType_t xDelay175 = pdMS_TO_TICKS(175); // 175ms 转换为 tick
-	const TickType_t xDelay200 = pdMS_TO_TICKS(200); // 200ms 转换为 tick
 	int delay_tag = 0;
 	int juggle = 0;
 	double motor_angle = 0.007;
-	double motor_vec = 0.0;
-	double shot_ball_angle = -0.7; // 要确认正负
+	double motor_vec = 1.0;
+	double final_pitch = 0.0;
+	double shot_ball_angle = 1.50; // 要确认正负
+	
 	while (1)
 	{
-		if (DBUS_decode_val.control_mode == 1)
+		if (DBUS_decode_val.control_mode == 1) // 遥控器控制
 		{
-			DBUS_decode_val.pitch += (-0.000006f * DBUS_decode_val.rocker[1]);
+			DBUS_decode_val.pitch += (-0.000040f * DBUS_decode_val.rocker[1]);
 			DBUS_decode_val.pitch = (DBUS_decode_val.pitch > 0.1) ? 0.1 : ((DBUS_decode_val.pitch < -0.8) ? -0.8 : DBUS_decode_val.pitch);
-			if(DBUS_decode_val.sw[1] == 2)
+			//将遥控器值映射到pitch轴角度
+			
+			if(DBUS_decode_val.sw[1] == 3) // 初次进入对颠球模式将云台前倾,后续pitch受遥控器控制，发球板保持竖直不动
 			{
-				if(delay_tag < 5) {
-					DBUS_decode_val.pitch = 0.0;
-					shot_ball_angle = -0.7;
-				}
-				else DBUS_decode_val.pitch = -0.8;
-			}
-			if(DBUS_decode_val.sw[1] == 3) // 初次进入对颠球模式将云台前倾
-			{
-				shot_ball_angle = 0;
 				if(juggle == 0)
 				{
 					juggle = 1;
 					DBUS_decode_val.pitch = -0.45;
 				}
+				shot_ball_angle = 0;
+				final_pitch = DBUS_decode_val.pitch;
 			}
 
-			RobStrite_Motor_Pos_control(&motor4, 4, DBUS_decode_val.pitch);
+			RobStrite_Motor_Pos_control(&motor4, 4.0, final_pitch);
 			osDelay(1);
-			RobStrite_Motor_Pos_control(&motor5, 24.0, shot_ball_angle);
+			RobStrite_Motor_Pos_control(&motor5, 56.0, shot_ball_angle);
+			osDelay(1);
+			RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
 			osDelay(1);
 			switch (delay_tag) 
 			{
 					case 0: // 默认状态
-							if (DBUS_decode_val.sw[1] != 3) // 在发球模式默认状态在限位处
+							if (DBUS_decode_val.sw[1] == 2) // 在发球模式默认状态在限位处
 							{
 									motor_angle = 0.007;
 									motor_vec = 4;
-									RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
-									osDelay(0);
-							} 
-							else if (DBUS_decode_val.sw[1] == 3) // 在对颠球模式默认状态比限位高一些
+									final_pitch = 0;
+									shot_ball_angle = 1.50;
+						} 
+							else if (DBUS_decode_val.sw[1] != 2) // 在对颠球模式默认状态比限位高一些
 							{
 									motor_angle = 0.04;
-									motor_vec = 16;
-									RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
-									osDelay(0);
+									motor_vec = 8;
+									final_pitch = 0;
+									shot_ball_angle = 0;
 							}
 							break;
 
 					case 1: // 低速出限位一点
 							motor_angle = 0.04;
 							motor_vec = 1;
-							RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
+							final_pitch = 0;
 							xLastWakeTime = xTaskGetTickCount();
 							delay_tag = 2;
 							break;
 
 					case 2: // 等待25ms电机运行到指定角度
-							if (xTaskGetTickCount() - xLastWakeTime >= xDelay25) // 非阻塞式delay
+							if (xTaskGetTickCount() - xLastWakeTime >= pdMS_TO_TICKS(25)) // 非阻塞式delay
 									delay_tag = 3;  // 状态转移 25ms
 							break;
 
 					case 3: // 高速击球
-							motor_angle = 0.57;
-							motor_vec = 24;
-							RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
+							if (DBUS_decode_val.sw[1] == 2) // 在发球模式速度、角度较低
+							{
+								motor_angle = 0.25;
+								motor_vec = 8;
+								final_pitch = 0;
+							}
+							else if (DBUS_decode_val.sw[1] == 3) // 在对颠球模式速度、角度较高
+							{
+									motor_angle = 0.57;//板恰好高出三个立柱
+									motor_vec = 24;
+									shot_ball_angle = 0;
+							}
+							else if (DBUS_decode_val.sw[1] == 1)
+							{
+								motor_angle = 0.3;
+								motor_vec = 12;
+							}
 							xLastWakeTime = xTaskGetTickCount();
 							delay_tag = 4;
 							break;
 
 					case 4: // 等待175ms电机运行到指定角度
-							if (xTaskGetTickCount() - xLastWakeTime >= xDelay175)
+							if (xTaskGetTickCount() - xLastWakeTime >= pdMS_TO_TICKS(175))
 							{
-								if(DBUS_decode_val.sw[1] == 3) // 对颠球模式直接回默认状态
+								if(DBUS_decode_val.sw[1] !=2) // 对颠球模式直接回默认状态
 									delay_tag = 0;  
 								else if(DBUS_decode_val.sw[1] == 2) // 进入发球状态
 									delay_tag = 5;  
@@ -419,31 +436,40 @@ void gimbal(void const * argument)
 							break;
 							
 					case 5: // 回到发球默认状态并将云台向前倾一定角度，防止被发球板打到
-							motor_angle = 0.007;
-							motor_vec = 4;
-							RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
+ 							motor_angle = 0.007;
+							motor_vec = 8;
+							final_pitch = -0.80;
 							xLastWakeTime = xTaskGetTickCount();
 							delay_tag = 6;
 							break;
 					
-					case 6: // 等待200ms电机运行到指定角度、排球落到合适的击球点
-							if (xTaskGetTickCount() - xLastWakeTime >= xDelay200)
-									delay_tag = 7;
+					case 6: // 等待130ms电机运行到指定角度、排球落到合适的击球点
+							if (xTaskGetTickCount() - xLastWakeTime >= pdMS_TO_TICKS(120))
+									delay_tag = 
+							7;
 							break;
 							
 					case 7: // 击球
-							shot_ball_angle = 0.9; // 要确认正负
+							shot_ball_angle = -2.90; // 要确认正负
 							xLastWakeTime = xTaskGetTickCount();
 							delay_tag = 8;
 							break;
 					
-					case 8: // 等待200ms击球完成
-							if (xTaskGetTickCount() - xLastWakeTime >= xDelay200)
+					case 8: // 等待75ms击球完成
+							if (xTaskGetTickCount() - xLastWakeTime >= pdMS_TO_TICKS(250))
 									delay_tag = 9;
 							break;
+							
 					case 9: // 击球板回原位
-							shot_ball_angle = -0.7;
-							delay_tag = 0;
+							shot_ball_angle = 1.50;
+							xLastWakeTime = xTaskGetTickCount();
+							delay_tag = 10;
+							break;
+					
+					case 10: // 等待电机复位
+							if (xTaskGetTickCount() - xLastWakeTime >= pdMS_TO_TICKS(5000))
+									delay_tag = 0;
+							//osDelay (5000);
 							break;
 					
 					default:
@@ -456,13 +482,60 @@ void gimbal(void const * argument)
 			}
 			osDelay(3);
 		}
-		else if (DBUS_decode_val.control_mode == 2) // 上位机控制
+		else if (DBUS_decode_val.control_mode == 2) // 上位机控制,发球不用上位机控制
 		{
-			float pitch_from_host = (PossiBuffRcf.Pitch > 0.1) ? 0.1 : ((PossiBuffRcf.Pitch < -0.8) ? -0.8 : PossiBuffRcf.Pitch);
-			if(DBUS_decode_val.sw[1] == 2)
-					pitch_from_host = 0.0;
-			RobStrite_Motor_Pos_control(&motor4, 1.2, pitch_from_host);
+			float final_pitch = (PossiBuffRcf.Pitch > 0.1) ? 0.1 : ((PossiBuffRcf.Pitch < -0.8) ? -0.8 : PossiBuffRcf.Pitch);
+			shot_ball_angle = 0;
+			RobStrite_Motor_Pos_control(&motor4, 4.0, final_pitch);
 			osDelay(1);
+			RobStrite_Motor_Pos_control(&motor5, 1.0, shot_ball_angle);
+			osDelay(1);
+			RobStrite_3Motor_simully_Pos_control(&motor1, &motor2, &motor3, motor_vec, motor_angle);
+			osDelay(1);
+			switch (delay_tag) 
+			{
+					case 0: // 默认状态
+							motor_angle = 0.04;
+							motor_vec = 16;
+							final_pitch = 0;
+							shot_ball_angle = 0;
+							break;
+
+					case 1: // 低速出限位一点
+							motor_angle = 0.04;
+							motor_vec = 1;
+							final_pitch = 0;
+							xLastWakeTime = xTaskGetTickCount();
+							delay_tag = 2;
+							break;
+
+					case 2: // 等待25ms电机运行到指定角度
+							if (xTaskGetTickCount() - xLastWakeTime >= pdMS_TO_TICKS(25)) // 非阻塞式delay
+									delay_tag = 3;  // 状态转移 25ms
+							break;
+
+					case 3: // 高速击球
+							motor_angle = 0.57;
+							motor_vec = 24;
+							final_pitch = 0;
+							xLastWakeTime = xTaskGetTickCount();
+							delay_tag = 4;
+							break;
+
+					case 4: // 等待175ms电机运行到指定角度
+							if (xTaskGetTickCount() - xLastWakeTime >= pdMS_TO_TICKS(175))
+									delay_tag = 0; // 回默认状态
+							break;
+					
+					default:
+							break;
+			}
+			
+			if (PossiBuffRcf.Shot == 1 && delay_tag == 0)
+			{
+				delay_tag = 1;
+			}
+			osDelay(3);
 		}
 		else if (DBUS_decode_val.control_mode == 0)
 		{

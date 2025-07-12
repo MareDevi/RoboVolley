@@ -215,9 +215,9 @@ void pid_init()
   PID_pos_y.cur_error = 0;
   PID_pos_y.his_error = 0;
 
-  PID_pos_yaw.kp = 1.0;
+  PID_pos_yaw.kp = 200.0;
   PID_pos_yaw.ki = 0.0;
-  PID_pos_yaw.kd = 0.0;
+  PID_pos_yaw.kd = 0.01;
   PID_pos_yaw.out_max = 1800;
   PID_pos_yaw.iout_max = 5;
   PID_pos_yaw.pout = 0;
@@ -375,6 +375,9 @@ double vx_in_posi;
 double vy_in_posi;
 double vz_in_posi;
 
+//new
+int state = 0;
+
 void chassis_auto_task(void) // 视觉定位任务
 {
   // 1. 获取位置数据
@@ -386,12 +389,12 @@ void chassis_auto_task(void) // 视觉定位任务
   // 2. 设置目标位置（从上位机获取 PossiBuffRcf，调试时使用固定值）
   position_x_target = 0.0;//PossiBuffRcf.X;     // 目标X坐标，调试时可用 X_TARGET
   position_y_target = 800.0;//PossiBuffRcf.Y;     // 目标Y坐标，调试时可用 Y_TARGET  
-  position_yaw_target = PossiBuffRcf.Yaw; // 目标航向角，调试时可用 YAW_TARGET
+  position_yaw_target = 1.57; //PossiBuffRcf.Yaw; // 目标航向角，调试时可用 YAW_TARGET
   
   // 3. 计算全局位置误差
   delta_x_absolute = position_x_target - position_x_current;
   delta_y_absolute = position_y_target - position_y_current;
-  delta_yaw = position_yaw_target - position_yaw;
+  delta_yaw = position_yaw - position_yaw_target;
 
    
   // 镝神的坐标变换
@@ -419,11 +422,25 @@ void chassis_auto_task(void) // 视觉定位任务
 
   delta_x_equal = position_x_Ecurrent - position_x_Etarget;
   delta_y_equal = position_y_Ecurrent - position_y_Etarget;
+	switch(state)
+	{
+		case 0:
+			if(fabs(delta_x_equal < 20) && (delta_y_equal < 20))
+			{
+				state = 1;
+			}
+			break;
+		case 1:
+			state = 2;
+			break;
+		case 2:
+			break;
+	}
 
   // 5. 位置PID控制
   vx_in_posi = -calculate_pid_position(&PID_pos_x, delta_x_equal, 10.0) * SPEED_POS;   // 前后速度
   vy_in_posi = -calculate_pid_position(&PID_pos_y, delta_y_equal, 10.0) * SPEED_POS;   // 左右速度
-  vz_in_posi = calculate_pid_position(&PID_pos_yaw, delta_yaw, 0.05) * SPEED_POS;     // 旋转速度（角度死区约3度）
+  vz_in_posi = -calculate_pid_position(&PID_pos_yaw, delta_yaw, 0.05) * SPEED_POS;     // 旋转速度（角度死区约3度）
   
   // 6. 逆运动学解算（包含旋转分量）
   double v_target1 = (-vx_in_posi * 0.667 + vz_in_posi * 0.333) * SPEED_SCALE;

@@ -381,66 +381,66 @@ int state = 0;
 void chassis_auto_task(void) // 视觉定位任务
 {
   // 1. 获取位置数据
-  position_x_current = position.world_y;   // 全场定位X坐标
-  position_y_current = position.world_x;   // 全场定位Y坐标
+  position_x_current = -position.world_y;   // 全场定位X坐标
+  position_y_current = -position.world_x;   // 全场定位Y坐标
 	position_yaw = -position.world_yaw / 180  *3.1415; // 全场定位航向角(spi读的航向角是角度制)
-  //position_yaw = get_INS_angle_point()[0]; // 全场定位航向角(C板IUM是弧度制)
 
   // 2. 设置目标位置（从上位机获取 PossiBuffRcf，调试时使用固定值）
-  position_x_target = 0.0;//PossiBuffRcf.X;     // 目标X坐标，调试时可用 X_TARGET
-  position_y_target = 800.0;//PossiBuffRcf.Y;     // 目标Y坐标，调试时可用 Y_TARGET  
+  position_x_target = 200.0;//PossiBuffRcf.X;     // 目标X坐标，调试时可用 X_TARGET
+  position_y_target = 600.0;//PossiBuffRcf.Y;     // 目标Y坐标，调试时可用 Y_TARGET  
   position_yaw_target = 1.57; //PossiBuffRcf.Yaw; // 目标航向角，调试时可用 YAW_TARGET
   
   // 3. 计算全局位置误差
-  delta_x_absolute = position_x_target - position_x_current;
-  delta_y_absolute = position_y_target - position_y_current;
   delta_yaw = position_yaw - position_yaw_target;
 
-   
   // 镝神的坐标变换
   position_x_Etarget = position_x_target*cos(position_yaw) - position_y_target*sin(position_yaw);
   position_y_Etarget = position_x_target*sin(position_yaw) + position_y_target*cos(position_yaw);
   position_x_Ecurrent = position_x_current*cos(position_yaw) - position_y_current*sin(position_yaw);
   position_y_Ecurrent = position_x_current*sin(position_yaw) + position_y_current*cos(position_yaw);
 
-  // 4. 坐标变换：将全局误差转换为机器人坐标系
-  // len = sqrt(delta_x_absolute * delta_x_absolute + delta_y_absolute * delta_y_absolute);
-
-  // if (len > 10.0) // 距离大于5mm时进行变换
-  // {
-  //   alpha = atan2(delta_y_absolute, delta_x_absolute); // 目标方向角
-  //   beta = position_yaw + 1.5707963 - alpha;          // 转换角度
-  //   delta_x_equal = len * sin(beta); // 机器人坐标系下X误差（前后）
-  //   delta_y_equal = len * cos(beta); // 机器人坐标系下Y误差（左右）
-  // }
-  // else
-  // {
-  //   // 距离太小，直接停止平移运动
-  //   delta_x_equal = 0.0;
-  //   delta_y_equal = 0.0;
-  // }
-
   delta_x_equal = position_x_Ecurrent - position_x_Etarget;
   delta_y_equal = position_y_Ecurrent - position_y_Etarget;
+	// 4. 状态机控制：先平移到位，再旋转
 	switch(state)
 	{
-		case 0:
-			if(fabs(delta_x_equal < 20) && (delta_y_equal < 20))
+		case 0: // 平移阶段 - 只控制X和Y轴
+			// 检查是否到达位置（20mm误差范围内）
+			if(fabs(delta_x_equal) < 50 && fabs(delta_y_equal) < 50)
 			{
-				state = 1;
+				state = 1; // 切换到旋转阶段
 			}
+			// 只控制平移，不控制旋转
+			vx_in_posi = -calculate_pid_position(&PID_pos_x, delta_x_equal, 10.0) * SPEED_POS;
+			vy_in_posi = -calculate_pid_position(&PID_pos_y, delta_y_equal, 10.0) * SPEED_POS;
+			vz_in_posi = 0.0; // 旋转速度为0
 			break;
-		case 1:
-			state = 2;
+			
+		case 1: // 旋转阶段 - 只控制Yaw轴
+			// 检查是否旋转到位
+			if(fabs(delta_yaw) < 0.05)
+			{
+				state = 2; // 切换到完成状态
+			}
+			// 保持位置，只控制旋转
+			vx_in_posi = 0; //-calculate_pid_position(&PID_pos_x, delta_x_equal, 10.0) * SPEED_POS * 0.3; // 位置保持（降低增益）
+			vy_in_posi = 0; //-calculate_pid_position(&PID_pos_y, delta_y_equal, 10.0) * SPEED_POS * 0.3; // 位置保持（降低增益）
+			vz_in_posi = -calculate_pid_position(&PID_pos_yaw, delta_yaw, 0.05) * SPEED_POS; // 旋转控制
 			break;
-		case 2:
+			
+		case 2: // 完成状态 - 全部控制以保持位置
+			// 所有轴都进行精确控制
+			state = 0;
+			break;
+			
+		default:
+			// 异常状态，停止所有运动
+			vx_in_posi = 0.0;
+			vy_in_posi = 0.0;
+			vz_in_posi = 0.0;
+			state = 0; // 重置状态
 			break;
 	}
-
-  // 5. 位置PID控制
-  vx_in_posi = -calculate_pid_position(&PID_pos_x, delta_x_equal, 10.0) * SPEED_POS;   // 前后速度
-  vy_in_posi = -calculate_pid_position(&PID_pos_y, delta_y_equal, 10.0) * SPEED_POS;   // 左右速度
-  vz_in_posi = -calculate_pid_position(&PID_pos_yaw, delta_yaw, 0.05) * SPEED_POS;     // 旋转速度（角度死区约3度）
   
   // 6. 逆运动学解算（包含旋转分量）
   double v_target1 = (-vx_in_posi * 0.667 + vz_in_posi * 0.333) * SPEED_SCALE;

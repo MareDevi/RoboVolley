@@ -407,3 +407,23 @@ void RobStrite_3Motor_simully_Pos_control(RobStrite_Motor* motor1,RobStrite_Moto
 	
 	  Set_RobStrite_3Motor_simully_parameter(motor1,motor2,motor3,0x7016,motor1->Motor_Set_All.set_angle,Set_parameter);
 }
+				
+void Set_ZeroPos_compen(RobStrite_Motor* motor)	
+{
+    Disenable_Motor(motor, 0);
+    
+    uint8_t txdata[8] = {0};
+    CAN_TxHeaderTypeDef TxMessage;
+    
+    TxMessage.IDE = CAN_ID_EXT;
+    TxMessage.RTR = CAN_RTR_DATA;
+    TxMessage.DLC = 8;
+    TxMessage.ExtId = Communication_Type_SetPosZero << 24 | motor->Master_CAN_ID << 8 | motor->CAN_ID;
+    
+    txdata[0] = 1;
+    HAL_CAN_AddTxMessage(&hcan2, &TxMessage, txdata, &Mailbox);
+		
+		HAL_Delay(2);
+    
+    Enable_Motor(motor);
+}

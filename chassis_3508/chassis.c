@@ -21,7 +21,7 @@
 #define SPEED_SCALE 7.8F
 #define SPEED_POS 1.0F
 #define KR 290.0F
-
+#define kv 1.0F
 // 声明一个静态变量来保存目标航向角
 //static double target_yaw = 0.0;
 //static bool heading_lock_first_time = true;
@@ -321,6 +321,7 @@ void chassis_control_task(void)
 
   chassis_can_cmd(motor_out1, motor_out2, motor_out3);
   HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);
+
 }
 
 /**
